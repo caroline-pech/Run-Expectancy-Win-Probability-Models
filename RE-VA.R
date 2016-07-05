@@ -19,6 +19,7 @@ library(dplyr)
 library(retrosheet)
 library(rvest)
 library(stringr)
+
 #################################################
 
 game.logs <- read.csv("gamelogs.merged.csv", header = FALSE)[,1:12]
@@ -26,7 +27,8 @@ headers <- read.csv("fields2.csv")
 names(game.logs) <- headers$Header
 decadedata$HOME.TEAM <- with(decadedata, substr(decadedata$GAME_ID, 1, 3))
 splits <- read.csv("splits.csv", header = TRUE)
-year <- '2016' #change this as necessary
+year <- '2016' 
+#change this as necessary
 teams <- data.frame(getTeamIDs(as.numeric(year)-1))
 teams$batter.team <- (c('laa','bal','bos','chw','cle','det','hou','kc','min','nyy','oak','sea','tb', 'tex','tor','ari','atl','chc','cin','col','la','mia','mil','nym','phi','pit','sd','sf','stl','was'))
 teams$league <- (c('AL','AL','AL','AL','AL','AL','AL','AL','AL','AL','AL','AL','AL','AL','AL','NL','NL','NL','NL','NL','NL','NL','NL','NL','NL','NL','NL','NL','NL','NL'))
@@ -241,43 +243,28 @@ get.retrosheet.id <- function(pitcher.name, pitcher.team, pitcherData){
   retrosheet.id <- pitcherData[info, 3]
   return(retrosheet.id)
 }
-'%!in%' <- function(x,y)!('%in%'(x,y))
+
 get.run.expectancy <- function(home.team, batter.team, pitcher.name, pitcher.team, year = '2016', data = decadedata, table = guts_table, team.info = teams){
   pfyear <- as.numeric(year) - 1
-  BPF <- ifelse(home.team %in% dimnames(team.info)[[1]], park.factors(home.team, pfyear, team.info, game.logs), 1.00)
-  if(home.team %!in% dimnames(team.info)[[1]]){print("Not a valid home team. Using league park average.")}
-  home.team <- ifelse(home.team %in% dimnames(team.info)[[1]], as.character(team.info[home.team, 1]), "")
-  batter.team <- ifelse(batter.team %in% dimnames(team.info)[[1]], as.character(team.info[batter.team, 2]), "")
-  if(batter.team == ""){print("Not a valid batting team. Using league averages.")}
-  pitcher.team <- ifelse(pitcher.team %in% dimnames(team.info)[[1]], as.character(team.info[pitcher.team, 5]), "")
-  if(pitcher.team == ""){print("Not a valid pitching team. Using league averages.")}
+  BPF <- park.factors(home.team, pfyear, team.info, game.logs)
+  home.team <- as.character(team.info[home.team, 1])
+  batter.team <- team.info[batter.team, 2]
+  pitcher.team <- team.info[pitcher.team, 5]
   #pitching stats -- splits
-  pitcher.retrosheet.id <- ifelse(pitcher.name %in% pitcherData$retro_name & pitcher.team %in% dimnames(team.info)[[1]], as.character(get.retrosheet.id(pitcher.name, pitcher.team, pitcherData)), "")
-  if(pitcher.retrosheet.id == ""){
-    print("Not a valid pitcher and/or pitcher team. Using league averages.")
-    p.splits <- c(average.pitcher.woba(splits),average.pitcher.woba(splits),average.pitcher.woba(splits))
-    }else{
-      p.splits <- split.data(pitcher.retrosheet.id, table, year, decadedata)
-    }
+  pitcher.retrosheet.id <- as.character(get.retrosheet.id(pitcher.name, pitcher.team, pitcherData))
+  p.splits <- split.data(pitcher.retrosheet.id, table, year, decadedata)
   p.splits.R <- p.splits[1]
   p.splits.L <- p.splits[2]
   avg <- p.splits[3]
   #team batting stats
-  if(batter.team != ""){
-    roster <- roster.wOBA(batter.team, splits, table, '2016')
-    roster$opp.wOBA <- ifelse(roster$bats == 'bats_right', p.splits.R, (ifelse(roster$bats =='bats_left', p.splits.L, avg)))
-    roster$avg.woba <- with(roster,(woba) - (woba * (woba - opp.wOBA)))
-    roster$RV.Per.PA <- round(with(roster,(as.numeric(avg.woba) - as.numeric(lg_woba))/woba_scale) * BPF,4)
-    roster <- roster[-c(4:29)]
-  }else{
-    roster <- data.frame(average.woba(splits))
-    roster$lg_woba <- table[as.character(pfyear), 1]
-    roster$woba_scale <- table[as.character(pfyear), 2]
-    dimnames(roster)[[2]][1] <- "woba"
-    roster$opp.wOBA <- p.splits[3]
-    roster$avg.woba <- with(roster,(woba) - (woba * (woba - opp.wOBA)))
-    roster$RV.Per.PA <- round(with(roster,(as.numeric(avg.woba) - as.numeric(lg_woba))/woba_scale) * BPF,4)
-  }
+  roster <- roster.wOBA(batter.team, splits, table, '2016')
+  roster$opp.wOBA <- ifelse(roster$bats == 'bats_right', p.splits.R, (ifelse(roster$bats =='bats_left', p.splits.L, avg)))
+  roster$avg.woba <- with(roster,(woba) - (woba * (woba - opp.wOBA)))
+  # roster$avg.woba <- with(roster, (as.numeric(woba) + as.numeric(opp.wOBA))/2)
+  league.wOBA <- table[year,1]
+  current.scale <- table[year,2]
+  roster$RV.Per.PA <- round(with(roster,(as.numeric(avg.woba) - as.numeric(lg_woba))/woba_scale) * BPF,4)
+  roster <- roster[-c(4:29)]
   return(roster)
 }
 
@@ -287,39 +274,13 @@ main.function <- function(state, count, batter, roster, env = Run.Env, condition
   dif <- ((yr.run.env-avg.run.env)/avg.run.env)
   cs <- condition[state,count]
   RE.with.Run.Env <- ((cs)*(dif) + (cs))
-  RE <- ifelse(batter %in% dimnames(roster)[[1]], round(as.numeric(roster[batter, 7]) + RE.with.Run.Env, 2), round(RE.with.Run.Env,2))
-  if(batter %!in% dimnames(roster)[[1]]){print("Not a valid batter. Using league averages.")}
+  RE <- round(as.numeric(roster[batter, 7]) + RE.with.Run.Env, 2)
   return(RE)
 }
 
-fun1 <- function(){
-  home.team <- readline("Home Team? ")
-  batter.team <- readline("Batting Team? ")
-  pitcher.name <- readline("Opposing Pitcher? ")
-  pitcher.team <- readline("Pitcher's Team? ")
+fun1 <- function(home.team,batter.team,pitcher.team,pitcher.name,state,count,batter.name){
   roster <- get.run.expectancy(home.team,batter.team,pitcher.name,pitcher.team)
-  RE <- fun2(roster)
-  return()
+  RE <- main.function(state,count,batter.name, roster)
+  return(RE)
 }
-fun2 <- function(roster){
-  state <- 0
-  newstate <- 0
-  while(word(newstate,-1) != "3"){
-    newstate <- as.character(readline("Base/Out State? (i.e. 111 0 for bases loaded and zero outs or 100 2 for man on first with two outs) "))
-    if(state == newstate){
-      count <- as.character(paste("c", readline("Count? "), sep = ""))
-      RE <- main.function(newstate,count,batter,roster)
-      print(RE)
-    }else{
-      batter <- readline("Batter? ")
-      count <- as.character(paste("c", readline("Count? "), sep = ""))
-      RE <- main.function(newstate,count,batter,roster)
-      print(RE)
-    }
-    state <- newstate
-  }
-  return()
-}
-
-if(interactive()) fun1()
 
