@@ -1,5 +1,5 @@
 library(dplyr)
-setwd("~/Desktop/RE&WP/Final.RE/run-expectancy")
+setwd("/srv/shiny-server/Run-Expectancy")
 shinyServer(function(input, output) {
   batters <- read.csv("batters.csv", header = TRUE)
   batters <- batters[c(2,3,4)]

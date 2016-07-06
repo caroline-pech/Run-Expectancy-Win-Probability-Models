@@ -108,9 +108,12 @@ park.factors <- function(home.team, year, teams, game.logs){
 
 #calculates wOBA for entire roster
 roster.wOBA <- function(batter.team, splits, table = guts_table, year = '2016'){
-  library("devtools")
-  devtools::install_github("stattleship/stattleship-r")
-  library(stattleshipR)
+  # library("devtools")
+  # devtools::install_github("stattleship/stattleship-r")
+  # library(stattleshipR)
+  source("zzz.R")
+  source("set_token.R")
+  source("ss_get_result.R")
   set_token("bf3c65fd3952ea434f4a96b641744475")
   sport <- 'baseball'
   league <- 'mlb'
