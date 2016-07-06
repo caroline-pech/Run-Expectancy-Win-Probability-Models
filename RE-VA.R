@@ -1,5 +1,3 @@
-setwd("~/Desktop/RE&WP/Final.RE/run-expectancy")
-# decadedata <- read.csv("all2010decade.csv", header = FALSE)
 A10 <- read.csv("2010A.csv", header=FALSE)
 B10 <- read.csv("2010B.csv", header=FALSE)
 A11 <- read.csv("2011A.csv", header=FALSE)
