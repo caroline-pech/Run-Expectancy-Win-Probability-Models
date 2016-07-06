@@ -1,6 +1,7 @@
 library(shiny)
 library(shinydashboard)
 library(retrosheet)
+setwd("~/Desktop/RE&WP/Final.RE/run-expectancy")
 year <- '2016'
 teams <- data.frame(getTeamIDs(as.numeric(year)-1))
 teams$batter.team <- (c('laa','bal','bos','chw','cle','det','hou','kc','min','nyy','oak','sea','tb', 'tex','tor','ari','atl','chc','cin','col','la','mia','mil','nym','phi','pit','sd','sf','stl','was'))
