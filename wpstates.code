@@ -1,0 +1,86 @@
+# split.data <- function(pitcher.retrosheet.id, table=guts_table, year = '2016', data = decadedata){
+#   data$season <- with(data, substr(GAME_ID, 4, 7))
+#   LHB <- subset(data, PIT_ID == pitcher.retrosheet.id & BAT_HAND_CD == 'L')
+#   RHB <- subset(data, PIT_ID == pitcher.retrosheet.id & BAT_HAND_CD == 'R')
+#   season <- table[year, ]
+#   RH.PA <- nrow(RHB)
+#   LH.PA <- nrow(LHB)
+#   
+#   RHB$SINGLES <- ifelse(RHB$EVENT_CD == 20, 1, 0)
+#   RHB$DOUBLES <- ifelse(RHB$EVENT_CD == 21, 1, 0)
+#   RHB$TRIPLES <- ifelse(RHB$EVENT_CD == 22, 1, 0)
+#   RHB$HRS <- ifelse(RHB$EVENT_CD == 23, 1, 0)
+#   RHB$BB <- ifelse(RHB$EVENT_CD == 14, 1, 0)
+#   RHB$IBB <- ifelse(RHB$EVENT_CD == 15, 1, 0)
+#   RHB$SAC <- ifelse(RHB$SH_FL == TRUE|RHB$SF_FL == TRUE, 1, 0)
+#   RHB$AB <- ifelse(RHB$EVENT_CD == 6|RHB$EVENT_CD == 8|RHB$EVENT_CD == 14|RHB$EVENT_CD == 15|RHB$EVENT_CD == 16|RHB$EVENT_CD == 17|RHB$SH_FL == TRUE|RHB$SF_FL == TRUE, 0, 1)
+#   pitcher.R.wOBA <- round(((with(season, (wBB * sum(RHB$BB) + (wHBP * sum(RHB$HBP)) + (w1B * sum(RHB$SINGLES)) + (w2B * sum(RHB$DOUBLES)) + 	(w3B * sum(RHB$TRIPLES)) + (wHR * sum(RHB$HRS)))/(sum(RHB$AB) + sum(RHB$BB) - sum(RHB$IBB) + sum(RHB$HBP) + sum(RHB$SAC))))),4)
+#   
+#   LHB$SINGLES <- ifelse(LHB$EVENT_CD == 20, 1, 0)
+#   LHB$DOUBLES <- ifelse(LHB$EVENT_CD == 21, 1, 0)
+#   LHB$TRIPLES <- ifelse(LHB$EVENT_CD == 22, 1, 0)
+#   LHB$HRS <- ifelse(LHB$EVENT_CD == 23, 1, 0)
+#     
+#   LHB$BB <- ifelse(LHB$EVENT_CD == 14, 1, 0)
+#   LHB$IBB <- ifelse(LHB$EVENT_CD == 15, 1, 0)
+#   LHB$SAC <- ifelse(LHB$SH_FL == TRUE|LHB$SF_FL == TRUE, 1, 0)
+#   LHB$AB <- ifelse(LHB$EVENT_CD == 6|LHB$EVENT_CD == 8|LHB$EVENT_CD == 14|LHB$EVENT_CD == 15|LHB$EVENT_CD == 16|LHB$EVENT_CD == 17|LHB$SH_FL == TRUE|LHB$SF_FL == TRUE, 0, 1)
+#   pitcher.L.wOBA <- round(((with(season, (wBB * sum(LHB$BB) + (wHBP * sum(LHB$HBP)) + (w1B * sum(LHB$SINGLES)) + (w2B * sum(LHB$DOUBLES)) + 	(w3B * sum(LHB$TRIPLES)) + (wHR * sum(LHB$HRS)))/(sum(LHB$AB) + sum(LHB$BB) - sum(LHB$IBB) + sum(LHB$HBP) + sum(LHB$SAC))))),4)
+#   avg <- (pitcher.R.wOBA + pitcher.L.wOBA)/2
+#   if (RH.PA < 500 & LH.PA > 500){
+#     return(c(0,pitcher.L.wOBA,avg))
+#   }  
+#   if (LH.PA < 500 & RH.PA > 500){
+#     return(c(pitcher.R.wOBA, 0, avg))
+#   }
+#   if (RH.PA >= 500 & LH.PA >= 500){
+#     return(c(pitcher.R.wOBA,pitcher.L.wOBA, avg))
+#   }
+#   if (RH.PA < 500 & LH.PA < 500){
+#     return(c(0,0,avg))
+#   }
+# }
+
+
+
+
+
+# guts_table <- read_html("http://www.fangraphs.com/guts.aspx?type=cn")
+# guts_table <- guts_table %>% html_nodes(xpath = '//*[@id="content"]/table') %>% html_table(fill = TRUE)
+# guts_table <- as.data.frame(guts_table)[-(1:2), (1:14)]
+# names(guts_table) <- c("season", "lg_woba", "woba_scale", "wBB", "wHBP", "w1B", "w2B", "w3B", "wHR", "runSB", "runCS", "lg_r_pa", "lg_r_w", "cFIP")
+# for(i in c(2:ncol(guts_table))) {
+#   guts_table[,i] <- as.numeric(as.character(guts_table[,i]))
+# }
+# dimnames(guts_table)[[1]] <- guts_table$season
+# guts_table$season <- NULL
+
+
+
+
+# getWP <- function(decadedata,half.inning,state,count,rdiff)
+
+getWP <- function(perm){
+  half.inning <- substr(perm,1,3)
+  state <- substr(perm,5,9)
+  x <- nchar(perm)
+  rdiff <- substr(perm,11,x)
+  # decadedata <- read.csv("decadedata-withwinners-counts.csv", header=TRUE)
+  data <- subset(decadedata, as.character(half.inning) == HALF.INNING & rdiff == RDIFF & as.character(state) == STATE)
+  # data <- subset(data, data[, count] == TRUE)
+  pos <- sum(data$winner == substr(data$GAME_ID, 1,3))
+  total <- nrow(data)
+  prob <- pos/total
+  print(prob)
+  return(prob)
+}
+
+
+rdiff <- c('-10', '-9', '-8', '-7', '-6', '-5', '-4', '-3', '-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10')
+half <- c('1 0', '2 0', '3 0', '4 0', '5 0', '6 0', '7 0', '8 0', '9 0','1 1', '2 1', '3 1', '4 1', '5 1', '6 1', '7 1', '8 1', '9 1')
+state <- c("000 0", "000 1", "000 2", "100 0", "100 1", "100 2", "010 0", "010 1", "010 2", "001 0", "001 1", "001 2", "110 0","110 1","110 2", "011 0", "011 1", "011 2", "101 0", "101 1", "101 2", "111 0", "111 1", "111 2")
+perms <- expand.grid(rdiff,half,state)
+dimnames(perms)[[2]] <- c("rdiff","half.inning","state")
+perms$combo <- paste(perms$half.inning, perms$state, perms$rdiff)
+x <- sapply(perms$combo, getWP)
+all.states <- data.frame(x)

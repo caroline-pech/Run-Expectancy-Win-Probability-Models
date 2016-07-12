@@ -1,58 +1,38 @@
-A10 <- read.csv("2010A.csv", header=FALSE)
-B10 <- read.csv("2010B.csv", header=FALSE)
-A11 <- read.csv("2011A.csv", header=FALSE)
-B11 <- read.csv("2011B.csv", header=FALSE)
-A12 <- read.csv("2012A.csv", header=FALSE)
-B12 <- read.csv("2012B.csv", header=FALSE)
-A13 <- read.csv("2013A.csv", header=FALSE)
-B13 <- read.csv("2013B.csv", header=FALSE)
-A14 <- read.csv("2014A.csv", header=FALSE)
-B14 <- read.csv("2014B.csv", header=FALSE)
-A15 <- read.csv("2015A.csv", header=FALSE)
-B15 <- read.csv("2015B.csv", header=FALSE)
-decadedata <- rbind.data.frame(A10,B10,A11,B11,A12,B12,A13,B13,A14,B14,A15,B15)
-headers <- read.csv("fields.csv")
-names(decadedata) <- headers$Header
 library(dplyr)
 library(retrosheet)
 library(rvest)
 library(stringr)
-
-#################################################
-
+library(rPython)
+setwd("~/Desktop/run-expectancy")
+teams <- read.csv("teams2016.csv", header = TRUE)
+dimnames(teams)[[1]] <- teams$X
+teams$X <- NULL
+python.load("ALstandings.py")
+python.load("NLstandings.py")
+AL.records <- read.csv(python.call("get_AL_standings"), header = TRUE)
+NL.records <- read.csv(python.call("get_NL_standings"), header = TRUE)
+records <- rbind(AL.records, NL.records)
 game.logs <- read.csv("gamelogs.merged.csv", header = FALSE)[,1:12]
 headers <- read.csv("fields2.csv")
 names(game.logs) <- headers$Header
-decadedata$HOME.TEAM <- with(decadedata, substr(decadedata$GAME_ID, 1, 3))
 splits <- read.csv("splits.csv", header = TRUE)
 year <- '2016' 
-#change this as necessary
-teams <- data.frame(getTeamIDs(as.numeric(year)-1))
-teams$batter.team <- (c('laa','bal','bos','chw','cle','det','hou','kc','min','nyy','oak','sea','tb', 'tex','tor','ari','atl','chc','cin','col','la','mia','mil','nym','phi','pit','sd','sf','stl','was'))
-teams$league <- (c('AL','AL','AL','AL','AL','AL','AL','AL','AL','AL','AL','AL','AL','AL','AL','NL','NL','NL','NL','NL','NL','NL','NL','NL','NL','NL','NL','NL','NL','NL'))
-teams$full.name <- (c('Los Angeles Angels of Anaheim','Baltimore Orioles','Boston Red Sox','Chicago White Sox','Cleveland Indians','Detriot Tigers','Houston Astros','Kansas City Royals','Minnesota Twins','New York Yankees','Oakland Athletics','Seattle Mariners','Tampa Bay Rays','Texas Rangers','Toronto Blue Jays','Arizona Diamondbacks','Atlanta Braves','Chicago Cubs','Cincinnati Reds','Colorado Rockies','Los Angeles Dodgers','Miami Marlins','Milwaukee Brewers','New York Mets','Philadelphia Phillies','Pittsburgh Pirates','San Diego Padres','San Francisco Giants','St. Louis Cardinals','Washington Nationals'))
-teams$pitching.data.team <- (c('LAA','BAL','BOS','CWS','CLE','DET','HOU','KC','MIN','NYY','OAK','SEA','TB','TEX','TOR','ARI','ATL','CHC','CIN','COL','LAD','MIA','MIL','NYM','PHI','PIT','SD','SF','STL','WSH'))
-teams$field <- (c('Angel Stadium of Anaheim','Oriole Park at Camden Yards','Fenway Park II','U.S. Cellular Field','Progressive Field','Comerica Park','Minute Maid Park','Kauffman Stadium','Target Field','Yankee Stadium III','O.co Coliseum','Safeco Field','Tropicana Field','Rangers Ballpark in Arlington','Rogers Centre','Chase Field','Turner Field','Wrigley Field','Great American Ball Park','Coors Field','Dodger Stadium','Marlins Park','Miller Park','Citi Field','Citizens Bank Park','PNC Park','Petco Park','AT&T Park','Busch Stadium III','Nationals Park'))
-teams$built.year <- (c(2012,1992,1934,2003,2012,2000,2002,1993,2010,2009,2012,1999,1998,2007,2005,2006,1997,1914,2003,1995,1962,2012,2001,2009,2004,2001,2004,2006,2006,2008))
-dimnames(teams)[[2]][1] <- ('home.team')
-pitcherData <- read.csv('pitcherData.csv', header = TRUE)
-pitcherData <- subset(pitcherData, pitcherData$mlb_pos == 'P')
-pitcherData <- pitcherData[c(4,14,24,25,26)]
-pitcherData <- pitcherData[-which(pitcherData$retro_id == ""), ]
-dimnames(pitcherData)[[1]] = paste(pitcherData$mlb_team, pitcherData$retro_name)
+pitcherSplits <- read.csv("pitcherData-splits.csv", header = TRUE)
+dimnames(pitcherSplits)[[1]] <- pitcherSplits$X
+pitcherSplits$X <- NULL
+pitcherData <- read.csv("pitcherData2016.csv", header=TRUE)
+dimnames(pitcherData)[[1]] <- pitcherData$X
+pitcherData$X <- NULL
 count.state <- read.csv("1990.2015.RE.States.Count.csv")
 dimnames(count.state)[[1]] <- count.state[, 1]
-guts_table <- read_html("http://www.fangraphs.com/guts.aspx?type=cn")
-guts_table <- guts_table %>% html_nodes(xpath = '//*[@id="content"]/table') %>% html_table(fill = TRUE)
-guts_table <- as.data.frame(guts_table)[-(1:2), (1:14)]
-names(guts_table) <- c("season", "lg_woba", "woba_scale", "wBB", "wHBP", "w1B", "w2B", "w3B", "wHR", "runSB", "runCS", "lg_r_pa", "lg_r_w", "cFIP")
-for(i in c(2:ncol(guts_table))) {
-  guts_table[,i] <- as.numeric(as.character(guts_table[,i]))
-}
-dimnames(guts_table)[[1]] <- guts_table$season
-guts_table$season <- NULL
+wpstates <- read.csv("WPstates.csv", header = TRUE)
+dimnames(wpstates)[[2]] <- c("State","WP")
+guts_table <- read.csv("guts_table_2016.csv", header = TRUE)
+dimnames(guts_table)[[1]] <- guts_table$X
+guts_table$X <- NULL
 Run.Env <- read.csv("Run.Environments.csv", header = TRUE)
-
+batters <- read.csv("batters.csv", header = TRUE)
+batters <- batters[c(2,3,4)]
 
 ################################
 get.BPF <- function(year, NT, home.team){
@@ -107,7 +87,7 @@ park.factors <- function(home.team, year, teams, game.logs){
 # Batter Analysis
 
 #calculates wOBA for entire roster
-roster.wOBA <- function(batter.team, splits, table = guts_table, year = '2016'){
+roster.wOBA <- function(batter.team, player_id, splits, table = guts_table, year = '2016'){
   # library("devtools")
   # devtools::install_github("stattleship/stattleship-r")
   # library(stattleshipR)
@@ -119,7 +99,7 @@ roster.wOBA <- function(batter.team, splits, table = guts_table, year = '2016'){
   league <- 'mlb'
   ep <- 'game_logs'
   league.team <- paste(league, batter.team, sep = "-")
-  q_body <- list(team_id=league.team, status='ended', interval_type='regularseason')
+  q_body <- list(player_id = player_id, status='ended', interval_type='regularseason')
   gls <- ss_get_result(sport=sport, league=league, ep=ep, query=q_body, walk=TRUE)
   ep <- 'players'
   q_body <- list(team_id = league.team)
@@ -196,56 +176,13 @@ average.catcher.woba <- function(splits, table = guts_table, year = '2015'){
   return(avg.catcher.woba)
 }
 
-split.data <- function(pitcher.retrosheet.id, table=guts_table, year = '2016', data = decadedata){
-  data$season <- with(data, substr(GAME_ID, 4, 7))
-  LHB <- subset(data, PIT_ID == pitcher.retrosheet.id & BAT_HAND_CD == 'L')
-  RHB <- subset(data, PIT_ID == pitcher.retrosheet.id & BAT_HAND_CD == 'R')
-  season <- table[year, ]
-  RH.PA <- nrow(RHB)
-  LH.PA <- nrow(LHB)
-  
-  RHB$SINGLES <- ifelse(RHB$EVENT_CD == 20, 1, 0)
-  RHB$DOUBLES <- ifelse(RHB$EVENT_CD == 21, 1, 0)
-  RHB$TRIPLES <- ifelse(RHB$EVENT_CD == 22, 1, 0)
-  RHB$HRS <- ifelse(RHB$EVENT_CD == 23, 1, 0)
-  RHB$BB <- ifelse(RHB$EVENT_CD == 14, 1, 0)
-  RHB$IBB <- ifelse(RHB$EVENT_CD == 15, 1, 0)
-  RHB$SAC <- ifelse(RHB$SH_FL == TRUE|RHB$SF_FL == TRUE, 1, 0)
-  RHB$AB <- ifelse(RHB$EVENT_CD == 6|RHB$EVENT_CD == 8|RHB$EVENT_CD == 14|RHB$EVENT_CD == 15|RHB$EVENT_CD == 16|RHB$EVENT_CD == 17|RHB$SH_FL == TRUE|RHB$SF_FL == TRUE, 0, 1)
-  pitcher.R.wOBA <- round(((with(season, (wBB * sum(RHB$BB) + (wHBP * sum(RHB$HBP)) + (w1B * sum(RHB$SINGLES)) + (w2B * sum(RHB$DOUBLES)) + 	(w3B * sum(RHB$TRIPLES)) + (wHR * sum(RHB$HRS)))/(sum(RHB$AB) + sum(RHB$BB) - sum(RHB$IBB) + sum(RHB$HBP) + sum(RHB$SAC))))),4)
-  
-  LHB$SINGLES <- ifelse(LHB$EVENT_CD == 20, 1, 0)
-  LHB$DOUBLES <- ifelse(LHB$EVENT_CD == 21, 1, 0)
-  LHB$TRIPLES <- ifelse(LHB$EVENT_CD == 22, 1, 0)
-  LHB$HRS <- ifelse(LHB$EVENT_CD == 23, 1, 0)
-    
-  LHB$BB <- ifelse(LHB$EVENT_CD == 14, 1, 0)
-  LHB$IBB <- ifelse(LHB$EVENT_CD == 15, 1, 0)
-  LHB$SAC <- ifelse(LHB$SH_FL == TRUE|LHB$SF_FL == TRUE, 1, 0)
-  LHB$AB <- ifelse(LHB$EVENT_CD == 6|LHB$EVENT_CD == 8|LHB$EVENT_CD == 14|LHB$EVENT_CD == 15|LHB$EVENT_CD == 16|LHB$EVENT_CD == 17|LHB$SH_FL == TRUE|LHB$SF_FL == TRUE, 0, 1)
-  pitcher.L.wOBA <- round(((with(season, (wBB * sum(LHB$BB) + (wHBP * sum(LHB$HBP)) + (w1B * sum(LHB$SINGLES)) + (w2B * sum(LHB$DOUBLES)) + 	(w3B * sum(LHB$TRIPLES)) + (wHR * sum(LHB$HRS)))/(sum(LHB$AB) + sum(LHB$BB) - sum(LHB$IBB) + sum(LHB$HBP) + sum(LHB$SAC))))),4)
-  avg <- (pitcher.R.wOBA + pitcher.L.wOBA)/2
-  if (RH.PA < 500 & LH.PA > 500){
-    return(c(0,pitcher.L.wOBA,avg))
-  }  
-  if (LH.PA < 500 & RH.PA > 500){
-    return(c(pitcher.R.wOBA, 0, avg))
-  }
-  if (RH.PA >= 500 & LH.PA >= 500){
-    return(c(pitcher.R.wOBA,pitcher.L.wOBA, avg))
-  }
-  if (RH.PA < 500 & LH.PA < 500){
-    return(c(0,0,avg))
-  }
-}
-
 get.retrosheet.id <- function(pitcher.name, pitcher.team, pitcherData){
   info <- paste(pitcher.team, pitcher.name)
   retrosheet.id <- pitcherData[info, 3]
   return(retrosheet.id)
 }
 
-get.run.expectancy <- function(home.team, batter.team, pitcher.name, pitcher.team, year = '2016', data = decadedata, table = guts_table, team.info = teams){
+get.run.expectancy <- function(home.team, batter.team, batter.name, pitcher.name, pitcher.team, year = '2016', data = decadedata, table = guts_table, team.info = teams){
   pfyear <- as.numeric(year) - 1
   BPF <- park.factors(home.team, pfyear, team.info, game.logs)
   home.team <- as.character(team.info[home.team, 1])
@@ -253,12 +190,14 @@ get.run.expectancy <- function(home.team, batter.team, pitcher.name, pitcher.tea
   pitcher.team <- team.info[pitcher.team, 5]
   #pitching stats -- splits
   pitcher.retrosheet.id <- as.character(get.retrosheet.id(pitcher.name, pitcher.team, pitcherData))
-  p.splits <- split.data(pitcher.retrosheet.id, table, year, decadedata)
+  # p.splits <- split.data(pitcher.retrosheet.id, table, year, data)
+  p.splits <- pitcherSplits[, pitcher.retrosheet.id]
   p.splits.R <- p.splits[1]
   p.splits.L <- p.splits[2]
   avg <- p.splits[3]
   #team batting stats
-  roster <- roster.wOBA(batter.team, splits, table, '2016')
+  player_id = tolower(paste('mlb', as.character(sub(" ", "-", batter.name)), sep ="-"))
+  roster <- roster.wOBA(batter.team, player_id, splits, table, '2016')
   roster$opp.wOBA <- ifelse(roster$bats == 'bats_right', p.splits.R, (ifelse(roster$bats =='bats_left', p.splits.L, avg)))
   roster$avg.woba <- with(roster,(woba) - (woba * (woba - opp.wOBA)))
   # roster$avg.woba <- with(roster, (as.numeric(woba) + as.numeric(opp.wOBA))/2)
@@ -269,19 +208,68 @@ get.run.expectancy <- function(home.team, batter.team, pitcher.name, pitcher.tea
   return(roster)
 }
 
-main.function <- function(state, count, batter, roster, env = Run.Env, condition = count.state){
+main.function <- function(state, count, batter, stats, env = Run.Env, condition = count.state){
   avg.run.env <- (sum(env[,2])/(nrow(env)))
   yr.run.env <- env[as.character(year),2]
   dif <- ((yr.run.env-avg.run.env)/avg.run.env)
   cs <- condition[state,count]
   RE.with.Run.Env <- ((cs)*(dif) + (cs))
-  RE <- round(as.numeric(roster[batter, 7]) + RE.with.Run.Env, 2)
+  RE <- round(as.numeric(stats[, 7]) + RE.with.Run.Env, 2)
   return(RE)
 }
 
 fun1 <- function(home.team,batter.team,pitcher.team,pitcher.name,state,count,batter.name){
-  roster <- get.run.expectancy(home.team,batter.team,pitcher.name,pitcher.team)
-  RE <- main.function(state,count,batter.name, roster)
+  stats <- get.run.expectancy(home.team,batter.team,batter.name, pitcher.name,pitcher.team)
+  RE <- main.function(state,count,batter.name, stats)
   return(RE)
+}
+
+WP <- function(wpstates, half.inning, state, count, rdiff, home.team, visiting.team, cs, records){
+  perm <- paste(half.inning, state, rdiff, sep = " ")
+  rdiff2 <- ifelse(substr(half.inning,3,3) == 0, rdiff - 1, rdiff + 1)
+  perm2 <- paste(half.inning, state, rdiff2, sep = " ")
+  wpstate <- (subset(wpstates, wpstates$State == perm))$WP
+  wpstate.plus.one.run <- (subset(wpstates, wpstates$State == perm2))$WP
+  state.dif <- (wpstate.plus.one.run - wpstate)
+  re <- cs[state,count]
+  raw.re <- cs[state,2]
+  dif <- (as.numeric(re) - as.numeric(raw.re))/as.numeric(raw.re)
+  new.wp <- dif * wpstate.plus.one.run
+  delta <- state.dif * dif
+  dynamic.state <- wpstate + delta
+  # adjust if interleague game
+  hleague <- teams[home.team, 3]
+  aleague <- teams[visiting.team, 3]
+  home.team <- teams[home.team,8]
+  visiting.team <- teams[visiting.team,8]
+  if(hleague != aleague){
+    hrecord <- subset(records, records$Team == home.team & records$Opponent == as.character(aleague))
+    arecord <- subset(records, records$Team == visiting.team & records$Opponent == as.character(hleague))
+    if(hrecord$Wins + hrecord$Losses == 0){
+      hrecord <- subset(records, records$Team == home.team)
+      hpercentage <- sum(hrecord$Wins)/(sum(hrecord$Losses)+sum(hrecord$Wins))
+    }
+    if(arecord$Wins + arecord$Losses == 0){
+      arecord <- subset(records, records$Team == home.team)
+      apercentage <- sum(arecord$Wins)/(sum(arecords$Losses)+sum(arecords$Wins))
+    }else{
+      hpercentage <- as.numeric(hrecord$Wins)/(as.numeric(hrecord$Losses)+as.numeric(hrecord$Wins))
+      apercentage <- as.numeric(arecord$Wins)/(as.numeric(arecord$Losses)+as.numeric(arecord$Wins))
+    }
+    percentage <- (hpercentage-apercentage)+0.5
+  }else if(home.team == visiting.team){
+    percentage <- 0.5
+  }else{
+    record <- subset(records, records$Team == as.character(home.team) & records$Opponent == as.character(visiting.team))
+    if(record$Wins + record$Losses == 0){
+      percentage <- 0.5
+    }else{
+      percentage <- as.numeric(record$Wins)/(as.numeric(record$Losses)+as.numeric(record$Wins)) 
+    }
+  }
+  x <- percentage - 0.50
+  wp.with.team.standing <- dynamic.state*(1+x/as.numeric(substr(half.inning,1,1)))
+  bound <- min(100, wp.with.team.standing)
+  return(bound)
 }
 
