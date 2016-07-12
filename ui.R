@@ -1,6 +1,8 @@
 teams <- read.csv("teams2016.csv", header = TRUE)
 dimnames(teams)[[1]] <- teams$X
 teams$X <- NULL
+library(shinydashboard)
+
 sidebar <- dashboardSidebar(sidebarMenu(menuItem("Win Probability", tabName = "wp", icon = icon("fa fa-angle-right")),
                             menuItem("Run Expectancy", tabName = "re", icon = icon("fa fa-angle-right"))))
 body <- dashboardBody(style="height:1000px",  
