@@ -196,8 +196,8 @@ get.run.expectancy <- function(home.team, batter.team, batter.name, pitcher.name
   #pitching stats -- splits
   pitcher.retrosheet.id <- as.character(get.retrosheet.id(pitcher.name, pitcher.team, pitcherData))
   p.splits <- psplits[, pitcher.retrosheet.id]
-  p.splits.R <- p.splits[1]
-  p.splits.L <- p.splits[2]
+  p.splits.R <- ifelse(p.splits[1] == 0, p.splits[3], p.splits[1])
+  p.splits.L <- ifelse(p.splits[2] == 0, p.splits[3], p.splits[2])
   avg <- p.splits[3]
   #team batting stats
   name <-  gsub("\\."," ", batter.name)
