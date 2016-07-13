@@ -6,15 +6,13 @@ library(dplyr)
 source("RE-VA.R")
 
 shinyServer(function(input, output) {
-  observeEvent(input$info.button, {output$pitcher.name <- renderUI({
-    available.pitchers <- (as.character(pitcherData[which(teams[input$pitcher.team, 5]==pitcherData$mlb_team),4]))
-    selectInput("pitcher.name","Pitcher's Name:", available.pitchers)})
-  })
-  observeEvent(input$info.button, {output$batter.name <- renderUI({
-    available.batters <- (as.character(player.info[which(teams[input$batter.team, 5]==player.info$team),5]))
-    selectInput("batter.name","Batter's Name:", available.batters)})
-  })
-  
+  a <- observe(if(input$info.button){
+      output$pitcher.name <- renderUI({
+        available.pitchers <- (as.character(pitcherData[which(teams[input$pitcher.team, 5]==pitcherData$mlb_team),4]))
+        selectInput("pitcher.name","Pitcher's Name:", available.pitchers)})
+      output$batter.name <- renderUI({
+        available.batters <- (as.character(player.info[which(teams[input$batter.team, 5]==player.info$team),5]))
+        selectInput("batter.name","Batter's Name:", available.batters)})})
   RE <- observe(if(input$state.button){
           runners <- paste(ifelse(input$s.first == 'Yes', 1, 0), ifelse(input$s.second == 'Yes', 1, 0), ifelse(input$s.third == 'Yes', 1, 0), sep="")
           state <- paste(runners, input$s.outs)
@@ -33,10 +31,14 @@ shinyServer(function(input, output) {
     half.inning <- paste(input$inning, half, sep = " ")
     w.count <- paste('c',input$w.balls, input$w.strikes, sep="")
     WP.raw <- min(WP(wpstates, half.inning, state, w.count, rdiff, input$h.team, input$v.team, count.state, records)*100, 100)
-    if(WP.raw < 0){WP.raw <- 0}
-    WP <- paste(round(WP.raw, 3), '%', sep="")
-    type <- ifelse(as.numeric(WP.raw) > 50, 'fa fa-thumbs-o-up', 'fa fa-thumbs-o-down')
-    infoBox("Home ", paste(WP), icon = icon(type), color='red', fill = TRUE)
+    if(NA %in% WP.raw){
+      infoBox("Home ", paste('Impossible'), color = 'red', fill = TRUE)
+    }else{
+      if(WP.raw < 0){WP.raw <- 0}
+      WP <- paste(round(WP.raw, 3), '%', sep="")
+      type <- ifelse(as.numeric(WP.raw) > 50, 'fa fa-thumbs-o-up', 'fa fa-thumbs-o-down')
+      infoBox("Home ", paste(WP), icon = icon(type), color='red', fill = TRUE)
+    }
     })
   output$OP <- renderInfoBox({
     b1 <- ifelse(input$first == 'Yes', 1, 0)
@@ -48,11 +50,16 @@ shinyServer(function(input, output) {
     half <- ifelse(input$half.inning == 'Top', 0, 1)
     half.inning <- paste(input$inning, half, sep = " ")
     w.count <- paste('c',input$w.balls, input$w.strikes, sep="")
-    WP <- WP(wpstates, half.inning, state, w.count, rdiff, input$h.team, input$v.team, count.state, records)*100
-    OP.raw <- min(100 - as.numeric(WP), 100)
-    if(OP.raw < 0){OP.raw <- 0}
-    OP <- paste(round(OP.raw, 3), '%', sep="")
-    type <- ifelse(as.numeric(OP.raw) > 50, 'fa fa-thumbs-o-up', 'fa fa-thumbs-o-down')
-    infoBox("Visiting ", paste(OP), icon =icon(type), color='navy', fill = TRUE)})
+    WP.raw <- WP(wpstates, half.inning, state, w.count, rdiff, input$h.team, input$v.team, count.state, records)*100
+    if(NA %in% WP.raw){
+      infoBox("Visiting ", paste('Impossible'), color = 'navy', fill = TRUE)
+    }else{
+      OP.raw <- min(100 - as.numeric(WP.raw), 100)
+      if(OP.raw < 0){OP.raw <- 0}
+      OP <- paste(round(OP.raw, 3), '%', sep="")
+      type <- ifelse(as.numeric(OP.raw) > 50, 'fa fa-thumbs-o-up', 'fa fa-thumbs-o-down')
+      infoBox("Visiting ", paste(OP), icon =icon(type), color='navy', fill = TRUE)
+    }
+    })
 
   })
