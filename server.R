@@ -19,7 +19,6 @@ shinyServer(function(input, output) {
           runners <- paste(ifelse(input$s.first == 'Yes', 1, 0), ifelse(input$s.second == 'Yes', 1, 0), ifelse(input$s.third == 'Yes', 1, 0), sep="")
           state <- paste(runners, input$s.outs)
           count <- paste('c',input$balls, input$strikes, sep="")
-          dat <- data.frame(x = numeric(0), y = numeric(0))
           RE <- (fun1(as.character(input$home.team), as.character(input$batter.team), as.character(input$pitcher.team), as.character(input$pitcher.name), as.character(state), as.character(count),as.character(input$batter.name)))
           output$runs <- renderInfoBox({infoBox("Run Expectancy", paste(RE), icon = icon('fa fa-angle-right'), color='navy',fill=TRUE)})
           })

@@ -106,35 +106,40 @@ roster.wOBA <- function(batter.team, player_id, splits, table = guts_table, year
   pls <- ss_get_result(sport=sport, league=league, ep=ep, query=q_body, walk=TRUE) 
   players<-do.call('rbind', lapply(pls, function(x) x$players))  
   colnames(players)[1] <- 'player_id' 
-  game_logs<-do.call('rbind', lapply(gls, function(x) x$game_logs))  
-  game_logs <- merge(players, game_logs, by='player_id') 
-  batter.stats <-  
-    game_logs %>%
-    filter(game_played == TRUE | batters_faced > 0) %>%
-    group_by(name, bats, position_abbreviation) %>%
-    summarise(PA = (sum(at_bats)+sum(walks)+sum(hit_by_pitch)+sum(sacrifice_flys)+sum(sacrifice_hits)), BB = sum(walks), HBP = sum(hit_by_pitch), singles = sum(singles), doubles = sum(doubles), triples = sum(triples), hr = sum(home_runs), SB = sum(stolen_bases), CS = sum(caught_stealing), AB = sum(at_bats), IBB = sum(intentional_walks_against), SF = sum(sacrifice_flys), SH = sum(sacrifice_hits)) 
-  bdata <- data.frame(batter.stats)
-  season <- table[year, ]
-  bdata <- merge(bdata, season)
-  bdata$regress <- ifelse(bdata$PA < 220 & bdata$PA > 0, TRUE, FALSE)
-  bdata$woba <- ifelse(bdata$PA != 0,round(((with(bdata, (wBB * (BB) + (wHBP * (HBP)) + (w1B * (singles)) + (w2B * (doubles)) + (w3B * (triples)) + (wHR * (hr)))/((AB) + (BB) - (IBB) + (HBP) + (SH) + (SF))))),4), (ifelse(bdata$position_abbreviation =='RP'|bdata$position_abbreviation =='SP', (average.pitcher.woba(splits, guts_table, (as.numeric(year)-1))), ifelse(bdata$position_abbreviation == 'C', (average.catcher.woba(splits, guts_table, (as.numeric(year)-1))),(average.woba(splits, guts_table, (as.numeric(year)-1)))))))
-  regress.data <- subset(bdata, bdata$regress == TRUE)
-  bdata <- subset(bdata, bdata$regress != TRUE)
-  regress.data$z <- as.numeric(regress.data$woba)/as.numeric(regress.data$PA)
-  pitchers <- new.data(subset(regress.data, regress.data$position_abbreviation == 'SP'|regress.data$position_abbreviation == 'RP'), 1, guts_table, year, splits)
-  catchers <- new.data(subset(regress.data, regress.data$position_abbreviation == 'C'), 2, guts_table, year, splits)
-  first.base <- new.data(subset(regress.data, regress.data$position_abbreviation == '1B'), 3, guts_table, year, splits)
-  second.base <- new.data(subset(regress.data, regress.data$position_abbreviation == '2B'), 4, guts_table, year, splits)
-  third.base <- new.data(subset(regress.data, regress.data$position_abbreviation == '3B'), 5, guts_table, year, splits)
-  SS <- new.data(subset(regress.data, regress.data$position_abbreviation == 'SS'), 6, guts_table, year, splits)
-  LF <- new.data(subset(regress.data, regress.data$position_abbreviation == 'LF'), 7, guts_table, year, splits)
-  CF <- new.data(subset(regress.data, regress.data$position_abbreviation == 'CF'), 8, guts_table, year, splits)
-  RF <- new.data(subset(regress.data, regress.data$position_abbreviation == 'RF'), 9, guts_table, year, splits)
-  DH <- new.data(subset(regress.data, regress.data$position_abbreviation == 'DH'), 10, guts_table, year, splits)
-  bdata <- rbind(bdata, pitchers, catchers, first.base,second.base,third.base,SS,LF,CF,RF,DH)
-  dimnames(bdata)[[1]] <- c(bdata$name)
-  bdata$name <- NULL
-  return(bdata)
+  game_logs<-do.call('rbind', lapply(gls, function(x) x$game_logs)) 
+  if(is.null(game_logs$player_id)){
+    roster <- data.frame()
+    return(roster)
+  }else{
+    game_logs <- merge(players, game_logs, by='player_id') 
+    batter.stats <-  
+      game_logs %>%
+      filter(game_played == TRUE | batters_faced > 0) %>%
+      group_by(name, bats, position_abbreviation) %>%
+      summarise(PA = (sum(at_bats)+sum(walks)+sum(hit_by_pitch)+sum(sacrifice_flys)+sum(sacrifice_hits)), BB = sum(walks), HBP = sum(hit_by_pitch), singles = sum(singles), doubles = sum(doubles), triples = sum(triples), hr = sum(home_runs), SB = sum(stolen_bases), CS = sum(caught_stealing), AB = sum(at_bats), IBB = sum(intentional_walks_against), SF = sum(sacrifice_flys), SH = sum(sacrifice_hits)) 
+    bdata <- data.frame(batter.stats)
+    season <- table[year, ]
+    bdata <- merge(bdata, season)
+    bdata$regress <- ifelse(bdata$PA < 220 & bdata$PA > 0, TRUE, FALSE)
+    bdata$woba <- ifelse(bdata$PA != 0,round(((with(bdata, (wBB * (BB) + (wHBP * (HBP)) + (w1B * (singles)) + (w2B * (doubles)) + (w3B * (triples)) + (wHR * (hr)))/((AB) + (BB) - (IBB) + (HBP) + (SH) + (SF))))),4), (ifelse(bdata$position_abbreviation =='RP'|bdata$position_abbreviation =='SP', (average.pitcher.woba(splits, guts_table, (as.numeric(year)-1))), ifelse(bdata$position_abbreviation == 'C', (average.catcher.woba(splits, guts_table, (as.numeric(year)-1))),(average.woba(splits, guts_table, (as.numeric(year)-1)))))))
+    regress.data <- subset(bdata, bdata$regress == TRUE)
+    bdata <- subset(bdata, bdata$regress != TRUE)
+    regress.data$z <- as.numeric(regress.data$woba)/as.numeric(regress.data$PA)
+    pitchers <- new.data(subset(regress.data, regress.data$position_abbreviation == 'SP'|regress.data$position_abbreviation == 'RP'), 1, guts_table, year, splits)
+    catchers <- new.data(subset(regress.data, regress.data$position_abbreviation == 'C'), 2, guts_table, year, splits)
+    first.base <- new.data(subset(regress.data, regress.data$position_abbreviation == '1B'), 3, guts_table, year, splits)
+    second.base <- new.data(subset(regress.data, regress.data$position_abbreviation == '2B'), 4, guts_table, year, splits)
+    third.base <- new.data(subset(regress.data, regress.data$position_abbreviation == '3B'), 5, guts_table, year, splits)
+    SS <- new.data(subset(regress.data, regress.data$position_abbreviation == 'SS'), 6, guts_table, year, splits)
+    LF <- new.data(subset(regress.data, regress.data$position_abbreviation == 'LF'), 7, guts_table, year, splits)
+    CF <- new.data(subset(regress.data, regress.data$position_abbreviation == 'CF'), 8, guts_table, year, splits)
+    RF <- new.data(subset(regress.data, regress.data$position_abbreviation == 'RF'), 9, guts_table, year, splits)
+    DH <- new.data(subset(regress.data, regress.data$position_abbreviation == 'DH'), 10, guts_table, year, splits)
+    bdata <- rbind(bdata, pitchers, catchers, first.base,second.base,third.base,SS,LF,CF,RF,DH)
+    dimnames(bdata)[[1]] <- c(bdata$name)
+    bdata$name <- NULL
+    return(bdata)
+  }
 }
 
 get.coeffs <- function(defensive.position, splits, table, year = '2016'){
@@ -182,7 +187,7 @@ get.retrosheet.id <- function(pitcher.name, pitcher.team, pitcherData){
   return(retrosheet.id)
 }
 
-get.run.expectancy <- function(home.team, batter.team, batter.name, pitcher.name, pitcher.team, year = '2016', data = decadedata, table = guts_table, team.info = teams){
+get.run.expectancy <- function(home.team, batter.team, batter.name, pitcher.name, pitcher.team, year = '2016', psplits = pitcherSplits, table = guts_table, team.info = teams){
   pfyear <- as.numeric(year) - 1
   BPF <- park.factors(home.team, pfyear, team.info, game.logs)
   home.team <- as.character(team.info[home.team, 1])
@@ -190,22 +195,29 @@ get.run.expectancy <- function(home.team, batter.team, batter.name, pitcher.name
   pitcher.team <- team.info[pitcher.team, 5]
   #pitching stats -- splits
   pitcher.retrosheet.id <- as.character(get.retrosheet.id(pitcher.name, pitcher.team, pitcherData))
-  # p.splits <- split.data(pitcher.retrosheet.id, table, year, data)
-  p.splits <- pitcherSplits[, pitcher.retrosheet.id]
+  p.splits <- psplits[, pitcher.retrosheet.id]
   p.splits.R <- p.splits[1]
   p.splits.L <- p.splits[2]
   avg <- p.splits[3]
   #team batting stats
-  player_id = tolower(paste('mlb', as.character(sub(" ", "-", batter.name)), sep ="-"))
+  name <-  gsub("\\."," ", batter.name)
+  name <- gsub("  ", " ", name)
+  player_id = tolower(paste('mlb', as.character(gsub(" ", "-", name)), sep ="-"))
   roster <- roster.wOBA(batter.team, player_id, splits, table, '2016')
-  roster$opp.wOBA <- ifelse(roster$bats == 'bats_right', p.splits.R, (ifelse(roster$bats =='bats_left', p.splits.L, avg)))
-  roster$avg.woba <- with(roster,(woba) - (woba * (woba - opp.wOBA)))
-  # roster$avg.woba <- with(roster, (as.numeric(woba) + as.numeric(opp.wOBA))/2)
   league.wOBA <- table[year,1]
   current.scale <- table[year,2]
-  roster$RV.Per.PA <- round(with(roster,(as.numeric(avg.woba) - as.numeric(lg_woba))/woba_scale) * BPF,4)
-  roster <- roster[-c(4:29)]
-  return(roster)
+  if(nrow(roster) == 0){
+    opp.woba <- avg
+    avg.woba <- average.woba(splits, table = guts_table, year = '2015')
+    RV.Per.PA <- round(((as.numeric(avg.woba) - as.numeric(league.wOBA))/current.scale) * BPF,4)
+    return(RV.Per.PA)
+  }else{
+    roster$opp.wOBA <- ifelse(roster$bats == 'bats_right', p.splits.R, (ifelse(roster$bats =='bats_left', p.splits.L, avg)))
+    roster$avg.woba <- with(roster,(woba) - (woba * (woba - opp.wOBA)))
+    roster$RV.Per.PA <- round(with(roster,(as.numeric(avg.woba) - as.numeric(lg_woba))/woba_scale) * BPF,4)
+    roster <- roster[-c(4:29)]
+    return(roster)
+  }
 }
 
 main.function <- function(state, count, batter, stats, env = Run.Env, condition = count.state){
@@ -214,7 +226,11 @@ main.function <- function(state, count, batter, stats, env = Run.Env, condition 
   dif <- ((yr.run.env-avg.run.env)/avg.run.env)
   cs <- condition[state,count]
   RE.with.Run.Env <- ((cs)*(dif) + (cs))
-  RE <- round(as.numeric(stats[, 7]) + RE.with.Run.Env, 2)
+  if(typeof(stats) == "double"){
+    RE <- round(stats + RE.with.Run.Env, 2)
+  }else{
+    RE <- round(as.numeric(stats[, 7]) + RE.with.Run.Env, 2)
+  }
   return(RE)
 }
 
