@@ -11,7 +11,7 @@ shinyServer(function(input, output) {
     selectInput("pitcher.name","Pitcher's Name:", available.pitchers)})
   })
   observeEvent(input$info.button, {output$batter.name <- renderUI({
-    available.batters <- (as.character(player.info[which(teams[input$batter.team, 5]==player.info$team),1]))
+    available.batters <- (as.character(player.info[which(teams[input$batter.team, 5]==player.info$team),5]))
     selectInput("batter.name","Batter's Name:", available.batters)})
   })
   
@@ -28,12 +28,11 @@ shinyServer(function(input, output) {
     b3 <- ifelse(input$third == 'Yes', 1, 0)
     runners <- paste(b1,b2,b3, sep = "")
     state <- paste(runners, input$outs, sep = " ")
-    rdiff <- as.numeric(input$home.score) - as.numeric(input$vis.score)
+    rdiff <- ifelse(abs(as.numeric(input$home.score) - as.numeric(input$vis.score)) > 10, 10, as.numeric(input$home.score) - as.numeric(input$vis.score))
     half <- ifelse(input$half.inning == 'Top', 0, 1)
     half.inning <- paste(input$inning, half, sep = " ")
     w.count <- paste('c',input$w.balls, input$w.strikes, sep="")
-    WP.raw <- WP(wpstates, half.inning, state, w.count, rdiff, input$h.team, input$v.team, count.state, records)*100
-    # (decadedata,half.inning,state,rdiff)*100
+    WP.raw <- min(WP(wpstates, half.inning, state, w.count, rdiff, input$h.team, input$v.team, count.state, records)*100, 100)
     WP <- paste(round(WP.raw, 3), '%', sep="")
     type <- ifelse(as.numeric(WP.raw) > 50, 'fa fa-thumbs-o-up', 'fa fa-thumbs-o-down')
     infoBox("Home ", paste(WP), icon = icon(type), color='red', fill = TRUE)
@@ -44,14 +43,14 @@ shinyServer(function(input, output) {
     b3 <- ifelse(input$third == 'Yes', 1, 0)
     runners <- paste(b1,b2,b3, sep = "")
     state <- paste(runners, input$outs, sep = " ")
-    rdiff <- as.numeric(input$home.score) - as.numeric(input$vis.score)
+    rdiff <- ifelse(abs(as.numeric(input$home.score) - as.numeric(input$vis.score)) > 10, 10, as.numeric(input$home.score) - as.numeric(input$vis.score))
     half <- ifelse(input$half.inning == 'Top', 0, 1)
     half.inning <- paste(input$inning, half, sep = " ")
     w.count <- paste('c',input$w.balls, input$w.strikes, sep="")
     WP <- WP(wpstates, half.inning, state, w.count, rdiff, input$h.team, input$v.team, count.state, records)*100
-    OP.raw <- 100 - as.numeric(WP)
+    OP.raw <- min(100 - as.numeric(WP), 100)
     OP <- paste(round(OP.raw, 3), '%', sep="")
     type <- ifelse(as.numeric(OP.raw) > 50, 'fa fa-thumbs-o-up', 'fa fa-thumbs-o-down')
     infoBox("Visiting ", paste(OP), icon =icon(type), color='navy', fill = TRUE)})
-    
+
   })
