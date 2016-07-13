@@ -11,7 +11,7 @@ shinyServer(function(input, output) {
     selectInput("pitcher.name","Pitcher's Name:", available.pitchers)})
   })
   observeEvent(input$info.button, {output$batter.name <- renderUI({
-    available.batters <- (as.character(batters[which(teams[input$batter.team, 5]==batters$mlb_team),1]))
+    available.batters <- (as.character(player.info[which(teams[input$batter.team, 5]==player.info$team),1]))
     selectInput("batter.name","Batter's Name:", available.batters)})
   })
   

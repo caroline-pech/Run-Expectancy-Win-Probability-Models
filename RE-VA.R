@@ -31,8 +31,8 @@ guts_table <- read.csv("guts_table_2016.csv", header = TRUE)
 dimnames(guts_table)[[1]] <- guts_table$X
 guts_table$X <- NULL
 Run.Env <- read.csv("Run.Environments.csv", header = TRUE)
-batters <- read.csv("batters.csv", header = TRUE)
-batters <- batters[c(2,3,4)]
+player.info <- read.csv("player-info.csv", header=TRUE)
+player.info$X <- NULL
 
 ################################
 get.BPF <- function(year, NT, home.team){
@@ -202,7 +202,8 @@ get.run.expectancy <- function(home.team, batter.team, batter.name, pitcher.name
   #team batting stats
   name <-  gsub("\\."," ", batter.name)
   name <- gsub("  ", " ", name)
-  player_id = tolower(paste('mlb', as.character(gsub(" ", "-", name)), sep ="-"))
+  team <- as.character(team.info[batter.team, 8])
+  player_id <- ifelse(batter.name %in% player.info$name, as.character(subset(player.info, team == player.info$team & player.info$name == batter.name)$slug), tolower(paste('mlb', as.character(gsub(" ", "-", name)), sep ="-")))
   roster <- roster.wOBA(batter.team, player_id, splits, table, '2016')
   league.wOBA <- table[year,1]
   current.scale <- table[year,2]
