@@ -32,7 +32,7 @@ shinyServer(function(input, output) {
     half <- ifelse(input$half.inning == 'Top', 0, 1)
     half.inning <- paste(input$inning, half, sep = " ")
     w.count <- paste('c',input$w.balls, input$w.strikes, sep="")
-    WP.raw <- min(WP(wpstates, half.inning, state, w.count, rdiff, input$h.team, input$v.team, count.state, records)*100, 100)
+    WP.raw <- max(min(WP(wpstates, half.inning, state, w.count, rdiff, input$h.team, input$v.team, count.state, records)*100, 100), 0)
     WP <- paste(round(WP.raw, 3), '%', sep="")
     type <- ifelse(as.numeric(WP.raw) > 50, 'fa fa-thumbs-o-up', 'fa fa-thumbs-o-down')
     infoBox("Home ", paste(WP), icon = icon(type), color='red', fill = TRUE)
@@ -48,7 +48,7 @@ shinyServer(function(input, output) {
     half.inning <- paste(input$inning, half, sep = " ")
     w.count <- paste('c',input$w.balls, input$w.strikes, sep="")
     WP <- WP(wpstates, half.inning, state, w.count, rdiff, input$h.team, input$v.team, count.state, records)*100
-    OP.raw <- min(100 - as.numeric(WP), 100)
+    OP.raw <- max(min(100 - as.numeric(WP), 100), 0)
     OP <- paste(round(OP.raw, 3), '%', sep="")
     type <- ifelse(as.numeric(OP.raw) > 50, 'fa fa-thumbs-o-up', 'fa fa-thumbs-o-down')
     infoBox("Visiting ", paste(OP), icon =icon(type), color='navy', fill = TRUE)})
