@@ -219,9 +219,13 @@ main.function <- function(state, count, batter, stats, env = Run.Env, condition 
 }
 
 fun1 <- function(home.team,batter.team,pitcher.team,pitcher.name,state,count,batter.name){
-  stats <- get.run.expectancy(home.team,batter.team,batter.name, pitcher.name,pitcher.team)
-  RE <- main.function(state,count,batter.name, stats)
-  return(RE)
+  if(batter.team == pitcher.team){
+    return('Not a Valid Matchup')
+  }else{
+    stats <- get.run.expectancy(home.team,batter.team,batter.name, pitcher.name,pitcher.team)
+    RE <- main.function(state,count,batter.name, stats)
+    return(RE)
+  }
 }
 
 WP <- function(wpstates, half.inning, state, count, rdiff, home.team, visiting.team, cs, records){
