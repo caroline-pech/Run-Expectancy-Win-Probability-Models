@@ -8,10 +8,13 @@ sidebar <- dashboardSidebar(width = 250, sidebarMenu(
                             menuItem("Run Expectancy", tabName = "re", icon = icon("fa fa-angle-right"))))
 body <- dashboardBody(  
           tabItems(
-              tabItem(tabName = "re", style="height:960px", fluidRow(
+              tabItem(tabName = "re", style="height:1000px", fluidRow(
                       column(width = 8, fluidRow(style="padding-left:25px",
                          selectizeInput("home","Home Team:", choices = sort(dimnames(teams)[[1]]),options = list(placeholder = 'Please select a team', onInitialize = I('function() { this.setValue(""); }'))),
-                         selectizeInput("batter","Batting Team:", choices = sort(dimnames(teams)[[1]]), options = list(placeholder = 'Please select a team', onInitialize = I('function() { this.setValue(""); }'))),
+                         selectizeInput("batter","Batting Team:", choices = sort(dimnames(teams)[[1]]), options = list(placeholder = 'Please select a team', onInitialize = I('function() { this.setValue(""); }'))), 
+                         tags$head(
+                           tags$style(HTML(".selectize-input.input-active, .selectize-input.input-active:hover, .selectize-control.multi .selectize-input.focus {border-color: navy !important;}
+                      .selectize-dropdown .active {background: #ADC4EC !important;}"))),
                          selectizeInput("pitcher","Pitcher's Team:", choices = sort(dimnames(teams)[[1]]), options = list(placeholder = 'Please select a team', onInitialize = I('function() { this.setValue(""); }'))),
                          actionButton("info", "Submit Game Info",style="background-color: #337ab7; border-color: #2e6da4;"),
                          br(),
@@ -33,9 +36,12 @@ body <- dashboardBody(
                          radioButtons('strikes2','Strikes?',c('0','1','2'),inline=TRUE),
                          actionButton("state.button2", "Get Run Expectancy",style="color: #lightgrey; background-color: #337ab7; border-color: #2e6da4"))),
                       infoBoxOutput("runs"))),
-            tabItem(tabName = 'wpSpecific',style="height:1250px",
+            tabItem(tabName = 'wpSpecific',style="height:1290px",
                       column(width = 8, fluidRow(style="padding-left:25px",
                           selectizeInput("home.team","Home Team:", choices = sort(dimnames(teams)[[1]]), options = list(placeholder = 'Please select a team', onInitialize = I('function() { this.setValue(""); }'))),
+                          tags$head(
+                            tags$style(HTML(".selectize-input.input-active, .selectize-input.input-active:hover, .selectize-control.multi .selectize-input.focus {border-color: navy !important;}
+                                            .selectize-dropdown .active {background: #ADC4EC !important;}"))),
                           selectizeInput("visiting.team", "Visiting Team", choices = sort(dimnames(teams)[[1]]), options = list(placeholder = 'Please select a team', onInitialize = I('function() { this.setValue(""); }'))),
                           textInput('inning','Inning:',value=1),
                           radioButtons('half.inning','Inning:',c('Top','Bottom'),inline=TRUE),

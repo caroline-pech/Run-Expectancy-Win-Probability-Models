@@ -13,7 +13,7 @@ shinyServer(function(input, output) {
       output$nameBatter <- renderUI({
         available.batters <- (as.character(player.info[which(teams[input$batter, 5]==player.info$team),5]))
         selectizeInput("nameBatter","Batter's Name:", available.batters, options = list(placeholder = 'Please select a batter', onInitialize = I('function() { this.setValue(""); }')))})})
-  b <- observe(if(input$info.button){
+  b <- observeEvent(input$info.button, {
     batter.team <- ifelse(input$half.inning == 'Top', paste(input$visiting.team), paste(input$home.team))
     pitcher.team <- ifelse(input$half.inning == 'Top', paste(input$home.team), paste(input$visiting.team))
     output$pitcher.name <- renderUI({
@@ -22,7 +22,7 @@ shinyServer(function(input, output) {
     output$batter.name <- renderUI({
       available.batters <- (as.character(player.info[which(teams[batter.team, 5]==player.info$team),5]))
       selectizeInput("batter.name","Batter's Name:", available.batters, options = list(placeholder = 'Please select a batter', onInitialize = I('function() { this.setValue(""); }')))})})
-  WP <- observe(if(input$state.button){
+  WP <- observeEvent(input$state.button,{
           batter.team <- ifelse(input$half.inning == 'Top', input$visiting.team, input$home.team)
           pitcher.team <- ifelse(input$half.inning == 'Top', input$home.team, input$visiting.team)
           runners <- paste(ifelse(input$s.first == 'Yes', 1, 0), ifelse(input$s.second == 'Yes', 1, 0), ifelse(input$s.third == 'Yes', 1, 0), sep="")
@@ -41,8 +41,6 @@ shinyServer(function(input, output) {
             output$away <- renderInfoBox({infoBox("Away - Win Prob", paste('Impossible'), icon = icon('fa fa-times'), color = 'red', fill = TRUE)})
           }else{
             error.check <- min(home.win.prob,0.9999) * 100
-            # error.check <- state.correction(home.win.prob*100, (1-home.win.prob)*100, count, half.inning, rdiff, state, input$home.team, input$visiting.team, count.state, records, teams, wpstates)
-            # print(error.check)
             away.win.prob <- round(100 - error.check,3)
             error.check <- round(error.check, 3)
             typea <- ifelse(as.numeric(error.check) > 50, 'fa fa-thumbs-o-up', 'fa fa-thumbs-o-down')
@@ -53,7 +51,7 @@ shinyServer(function(input, output) {
             output$away <- renderInfoBox({infoBox("Away - Win Prob", paste(away.win.prob, '%', sep = ""), icon = icon(typeb), color = colorb, fill = TRUE)})
           }
         })
-  RE <- observe(if(input$state.button){
+  RE <- observe(if(input$state.button2){
     runners <- paste(ifelse(input$s.first2 == 'Yes', 1, 0), ifelse(input$s.second2 == 'Yes', 1, 0), ifelse(input$s.third2 == 'Yes', 1, 0), sep="")
     state <- paste(runners, input$s.outs2)
     count <- paste('c',input$balls2, input$strikes2, sep="")
