@@ -565,12 +565,12 @@ matchup <- function(batter.team, batter.name, pitcher.player.id,wpstates, half.i
   # WPout <- WP(wpstates, out.half.inning, out.state, 'c00', rdiff, home.team, visiting.team, cs, records, team.info)
   WPout <- corrector(half.inning, out.state, rdiff, wpstates)
   # sum the differences in win probabilities for each scenario multiplied by their corresponding probabilities
-  print(currentWP)
-  print(pout)
-  print(psingle)
-  print(pdouble)
-  print(ptriple)
-  print(phr)
+  if(half.inning == '9 1'){
+    WPsingle <- ifelse(s.rdiff > 0, 1, WPsingle)
+    WPdouble <- ifelse(d.rdiff > 0, 1, WPdouble)
+    WPtriple <- ifelse(t.rdiff > 0, 1, WPtriple)
+    WPhr <- ifelse(hr.rdiff > 0, 1, WPhr)
+  }
   delta <- ((WPout - currentWP)*pout) + ((WPsingle - currentWP)*psingle) + ((WPdouble - currentWP)*pdouble) + ((WPtriple - currentWP)*ptriple) + ((WPhr - currentWP)*phr)
   # return the new win probability given the pitcher/batter calculations
   newWP <- (as.numeric(currentWP*100)) + delta
@@ -639,7 +639,6 @@ state.correction <- function(half.inning, state, rdiff, wpstates){
     index <- as.numeric(which(perms == perm))
     wpstate <- sorted[index]
   }
-  # print(wpstate)
   ifelse(wpstate >= 1, return(0.9999), return(wpstate))
   ifelse(wpstate <= 0, return(0.0001), return(wpstate))
 }
@@ -669,7 +668,7 @@ run.correction <- function(half.inning, state, rdiff, wpstates){
                  state.correction('4 1', state, rdiff, wpstates), state.correction('5 1', state, rdiff, wpstates), state.correction('6 1', state, rdiff, wpstates),
                  state.correction('7 1', state, rdiff, wpstates), state.correction('8 1', state, rdiff, wpstates))
       index <- as.numeric(substr(half.inning,1,1)) 
-      sorted <- sort(upper)
+      sorted <- sort(lower)
       updated <- sorted[index]
       return(min(updated, 0.9999))
     }else{
@@ -677,7 +676,7 @@ run.correction <- function(half.inning, state, rdiff, wpstates){
                  state.correction('4 1', state, rdiff, wpstates), state.correction('5 1', state, rdiff, wpstates), state.correction('6 1', state, rdiff, wpstates),
                  state.correction('7 1', state, rdiff, wpstates), state.correction('8 1', state, rdiff, wpstates), state.correction('9 1', state, rdiff, wpstates))
       index <- as.numeric(substr(half.inning,1,1))
-      sorted <- sort(upper, decreasing = TRUE)
+      sorted <- sort(lower, decreasing = TRUE)
       updated <- sorted[index]
       return(max(updated, 0.0001))
     }
@@ -686,9 +685,7 @@ run.correction <- function(half.inning, state, rdiff, wpstates){
 
 corrector <- function(half.inning, state, rdiff, wpstates){
   A <- state.correction(half.inning, state, rdiff, wpstates)
-  print(A)
   B <- run.correction(half.inning, state, rdiff, wpstates)
-  print(B)
   corrector <- (A+B)/2
   return(corrector)
 }
