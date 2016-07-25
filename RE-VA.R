@@ -339,98 +339,6 @@ fun1 <- function(home.team,batter.team,pitcher.team,pitcher.name,state,count,bat
 
 
 
-# calculate generic win probability not using pitcher/batter
-WP <- function(wpstates, half.inning, state, count, rdiff, home.team, visiting.team, cs, records, team.info){
-  # current permutation of inning, state, and run differential
-  perm <- paste(half.inning, state, rdiff, sep = " ")
-  # calculate the run differential if a run was scored in the current half inning
-  rdiff2 <- ifelse(substr(half.inning,3,3) == 0, rdiff - 1, rdiff + 1)
-  # find the new permutation with the new run differential 
-  perm2 <- paste(half.inning, state, rdiff2, sep = " ")
-  # find the win probability with the current permutation
-  wpstate <- (subset(wpstates, wpstates$State == perm))$WP
-  if((subset(wpstates, wpstates$State == perm))$Num < 200){
-    print('one')
-    wpstate <- corrector(half.inning, state, rdiff, wpstates)
-  }
-  # find the win probability with the permutation if a run is scored
-  wpstate.plus.one.run <- (subset(wpstates, wpstates$State == perm2))$WP
-  if((subset(wpstates, wpstates$State == perm2))$Num < 200){
-    print('two')
-    wpstate.plus.one.run <- corrector(half.inning, state, rdiff, wpstates)
-  }
-  # calculate the difference in the win probabilities
-  state.dif <- (wpstate.plus.one.run - wpstate)
-  # find the run expectancy with the current state and count
-  re <- cs[state,count]
-  # find the general run expectancy just with the base/out state (count back to 0-0) 
-  raw.re <- cs[state,2]
-  # find the change in the run expectancy
-  dif <- (as.numeric(re) - as.numeric(raw.re))/as.numeric(raw.re)
-  # multiply the change by the win probability if a run scored
-  new.wp <- dif * wpstate.plus.one.run
-  delta <- state.dif * dif
-  # add the current win probability to the change if a run scored
-  dynamic.state <- wpstate + delta
-  # adjust if interleague game
-  # get league of home team
-  hleague <- teams[home.team, 3]
-  # get league of away team
-  aleague <- teams[visiting.team, 3]
-  # get abbreviation of home team
-  home.team <- teams[home.team,8]
-  # get abbreviation of away team
-  visiting.team <- teams[visiting.team,8]
-  # if an interleague game, use a different set of calculations
-  if(hleague != aleague){
-    # get records for both teams (interleague record)
-    hrecord <- subset(records, records$Team == home.team & records$Opponent == as.character(aleague))
-    arecord <- subset(records, records$Team == visiting.team & records$Opponent == as.character(hleague))
-    # if home team or away team hasn't played any games against a team from the other league, use their total record to calculate winning percentage
-    if(hrecord$Wins + hrecord$Losses == 0){
-      hrecord <- subset(records, records$Team == home.team)
-      hpercentage <- sum(hrecord$Wins)/(sum(hrecord$Losses)+sum(hrecord$Wins))
-    }
-    if(arecord$Wins + arecord$Losses == 0){
-      arecord <- subset(records, records$Team == home.team)
-      apercentage <- sum(arecord$Wins)/(sum(arecords$Losses)+sum(arecords$Wins))
-    }else{
-      # otherwise just calculate winning percentage from interleague games
-      hpercentage <- as.numeric(hrecord$Wins)/(as.numeric(hrecord$Losses)+as.numeric(hrecord$Wins))
-      apercentage <- as.numeric(arecord$Wins)/(as.numeric(arecord$Losses)+as.numeric(arecord$Wins))
-    }
-    # calculate win probability for home team against the visiting team
-    P.ab <- (hpercentage-apercentage)+0.5
-  }else if(home.team == visiting.team){
-    # if home screen is set (for example Angels v. Angels), return generic win probability
-    P.ab <- 0.5
-  }else{
-    # if game is between teams in the same league, get record of both teams, and calculate total number of games each team has played
-    record.a <- subset(records, records$Team == as.character(home.team))
-    games.a <- as.numeric(sum(record.a$Wins) + sum(record.a$Losses))
-    record.b <- subset(records, records$Team == as.character(visiting.team))
-    games.b <- as.numeric(sum(record.b$Wins) + sum(record.b$Losses))
-    # if no games have been played by one team, return generic win probability
-    if(games.a == 0){
-      P.ab <- 0.5
-    }else if(games.b == 0){
-      P.ab <- 0.5
-      # otherwise find win probabilities for each team and use log5 equation for probability between two teams
-    }else{
-      P.a <- as.numeric(sum(record.a$Wins)/games.a)
-      P.b <-as.numeric(sum(record.b$Wins)/games.b)
-      P.ab <- (P.a - (P.a * P.b))/(P.a + P.b - (2*(P.a*P.b)))
-    }
-  }
-  # find the amount above or below the basic 50/50 chances
-  x <- P.ab - 0.50
-  # value the team standings propotionally less as the game continues, and multiply by updated state to get the win probability with the team standings
-  wp.with.team.standing <- as.numeric(dynamic.state)*(1+x/as.numeric(substr(half.inning,1,1)))
-  # correct if the percentage went above 100, so at most, it is 99.99%
-  bound <- min(99.99, wp.with.team.standing)
-  return(bound)
-}
-
 # get percents of singles, doubles, triples, and homeruns out of all player's hits
 get.percents <- function(batter.team, batter.name, team.info = teams){
   suppressWarnings(python.load("batterPercentages.py"))
@@ -442,7 +350,7 @@ get.percents <- function(batter.team, batter.name, team.info = teams){
 get.ba <- function(batter.team, batter.name, team.info){
   suppressWarnings(python.load("batterBA.py"))
   team <- as.character(team.info[batter.team,8])
-  BA <- python.call("get_ba", batter.name, team)
+  BA <- suppressWarnings(python.call("get_ba", batter.name, team))
   return(BA)
 } 
 # get league batting average
@@ -509,13 +417,14 @@ matchup <- function(batter.team, batter.name, pitcher.player.id,wpstates, half.i
   # probability of getting an out
   pout <- 1 - (psingle + pdouble + ptriple + phr)
   # if current number of outs = 2, if an out is made, state goes to "000 0" and a new half inning. 
-  if(substr(state,3,3)=='2'){
+  if(substr(state,5,5)=='2'){
     out.state <- str_replace(state, '2', '0')
     out.state <- str_replace(state, substr(state,1,3), '000')
     # find the next half inning
-    if(substr(half.inning,3,3)=='1'){
+    if(substr(half.inning,5,5)=='1'){
       out.half.inning <- paste(as.character(as.numeric(substr(half.inning,1,1))+1), '0')
-    }else if(substr(half.inning,3,3)=='0'){
+      out.half.inning <- min(9, out.half.inning)
+    }else if(substr(half.inning,5,5)=='0'){
       out.half.inning <- paste(substr(half.inning,1,1), '1')
     }
   }else{
@@ -565,6 +474,9 @@ matchup <- function(batter.team, batter.name, pitcher.player.id,wpstates, half.i
   # WPout <- WP(wpstates, out.half.inning, out.state, 'c00', rdiff, home.team, visiting.team, cs, records, team.info)
   WPout <- corrector(half.inning, out.state, rdiff, wpstates)
   # sum the differences in win probabilities for each scenario multiplied by their corresponding probabilities
+  if(half.inning == '9 0' & substr(state, 5,5) == 2 & rdiff > 0){
+    WPout <- 0
+  }
   if(half.inning == '9 1'){
     WPsingle <- ifelse(s.rdiff > 0, 1, WPsingle)
     WPdouble <- ifelse(d.rdiff > 0, 1, WPdouble)
@@ -574,7 +486,7 @@ matchup <- function(batter.team, batter.name, pitcher.player.id,wpstates, half.i
   delta <- ((WPout - currentWP)*pout) + ((WPsingle - currentWP)*psingle) + ((WPdouble - currentWP)*pdouble) + ((WPtriple - currentWP)*ptriple) + ((WPhr - currentWP)*phr)
   # return the new win probability given the pitcher/batter calculations
   newWP <- (as.numeric(currentWP*100)) + delta
-  return(round(newWP/100, 3))
+  return(newWP/100)
 }
 # calculate run differential if a single is hit using current state
 get.s.rdiff <- function(state, half.inning, rdiff){
@@ -616,12 +528,13 @@ pitcher.batter.WP <- function(wpstates, half.inning, state, count, rdiff, home.t
     pitcher.player.id <- ifelse(pitcher.name %in% player.info$name, as.character(subset(player.info, team == player.info$team & player.info$name == pitcher.name)$slug), tolower(paste('mlb', as.character(gsub(" ", "-", name)), sep ="-")))
     # run matchup function and return specific win probability given pitcher and batter
     pitcher.batter.matchup <- matchup(batter.team, batter.name, pitcher.player.id, wpstates, half.inning, state, count, rdiff, home.team, visiting.team, pitcher.name, pitcher.team, cs, records, team.info, league)
-    return(pitcher.batter.matchup) 
+    win.prob <- standings(home.team, visiting.team, teams, records, pitcher.batter.matchup, half.inning)
+    return(win.prob) 
   }
 }
 
 # change NA results from calling WP to zero
-# 
+ 
 state.correction <- function(half.inning, state, rdiff, wpstates){
   states <- c('000 2','100 2','000 1','010 2','001 2','110 2','101 2','000 0','100 1','011 2','010 1','111 2','100 0','110 1','001 1','010 0','101 1','011 1','001 0','110 0','111 1','101 0','011 0','111 0')
   perm <- paste(half.inning, state, rdiff, sep = " ")
@@ -688,6 +601,67 @@ corrector <- function(half.inning, state, rdiff, wpstates){
   B <- run.correction(half.inning, state, rdiff, wpstates)
   corrector <- (A+B)/2
   return(corrector)
+}
+
+standings <- function(home.team, visiting.team, teams, records, wpstate, half.inning){
+  hleague <- teams[home.team, 3]
+  # get league of away team
+  aleague <- teams[visiting.team, 3]
+  # get abbreviation of home team
+  home.team <- teams[home.team,8]
+  # get abbreviation of away team
+  visiting.team <- teams[visiting.team,8]
+  # if an interleague game, use a different set of calculations
+  if(hleague != aleague){
+    # get records for both teams (interleague record)
+    hrecord <- subset(records, records$Team == home.team & records$Opponent == as.character(aleague))
+    arecord <- subset(records, records$Team == visiting.team & records$Opponent == as.character(hleague))
+    # if home team or away team hasn't played any games against a team from the other league, use their total record to calculate winning percentage
+    if(hrecord$Wins + hrecord$Losses == 0){
+      hrecord <- subset(records, records$Team == home.team)
+      hpercentage <- sum(hrecord$Wins)/(sum(hrecord$Losses)+sum(hrecord$Wins))
+    }
+    if(arecord$Wins + arecord$Losses == 0){
+      arecord <- subset(records, records$Team == home.team)
+      apercentage <- sum(arecord$Wins)/(sum(arecords$Losses)+sum(arecords$Wins))
+    }else{
+      # otherwise just calculate winning percentage from interleague games
+      hpercentage <- as.numeric(hrecord$Wins)/(as.numeric(hrecord$Losses)+as.numeric(hrecord$Wins))
+      apercentage <- as.numeric(arecord$Wins)/(as.numeric(arecord$Losses)+as.numeric(arecord$Wins))
+    }
+    # calculate win probability for home team against the visiting team
+    P.ab <- (hpercentage-apercentage)+0.5
+  }else if(home.team == visiting.team){
+    # if home screen is set (for example Angels v. Angels), return generic win probability
+    P.ab <- 0.5
+  }else{
+    # if game is between teams in the same league, get record of both teams, and calculate total number of games each team has played
+    record.a <- subset(records, records$Team == as.character(home.team))
+    games.a <- as.numeric(sum(record.a$Wins) + sum(record.a$Losses))
+    record.b <- subset(records, records$Team == as.character(visiting.team))
+    games.b <- as.numeric(sum(record.b$Wins) + sum(record.b$Losses))
+    # if no games have been played by one team, return generic win probability
+    if(games.a == 0){
+      P.ab <- 0.5
+    }else if(games.b == 0){
+      P.ab <- 0.5
+      # otherwise find win probabilities for each team and use log5 equation for probability between two teams
+    }else{
+      P.a <- as.numeric(sum(record.a$Wins)/games.a)
+      P.b <-as.numeric(sum(record.b$Wins)/games.b)
+      P.ab <- (P.a - (P.a * P.b))/(P.a + P.b - (2*(P.a*P.b)))
+    }
+  }
+  # find the amount above or below the basic 50/50 chances
+  x <- P.ab - 0.50
+  # value the team standings propotionally less as the game continues, and multiply by updated state to get the win probability with the team standings
+  wp.with.team.standing <- as.numeric(wpstate)*(1+x/as.numeric(substr(half.inning,1,1)))
+  if(wpstate > 0.90){
+    wp.with.team.standing <- min(wp.with.team.standing, 0.9999)
+  }else if(wpstate < 0.1){
+    wp.with.team.standing <- max(wp.with.team.standing, 0.01)
+  }
+  return(round(wp.with.team.standing,3))
 }
 
 
