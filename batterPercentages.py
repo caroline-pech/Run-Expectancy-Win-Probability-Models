@@ -11,15 +11,29 @@ def get_percentages(player, team):
 	soup = BeautifulSoup(page.read(), "html.parser")
 	table = soup.find(text = re.compile("NAME")).find_parent("table")
 	rows = table.findAll('tr')
-	player = table.find(text = re.compile(player)).find_parent("tr")
-	cells = player.findAll('td')
-	stat = [cell.text.strip('\n') for cell in cells]
-	# stat is line of player's stats
-	# calculations below find percents of singles/hits, doubles/hits, etc
-	single = float(stat[4]) - (float(stat[5]) + float(stat[6]) + float(stat[7]))
-	psingle = round(single/float(stat[2]), 4)
-	pdouble = round(float(stat[5])/float(stat[2]), 4)
-	ptriple = round(float(stat[6])/float(stat[2]), 4)
-	phr = round(float(stat[7])/float(stat[2]), 4)
-	pOUT = round(1 - (psingle + pdouble + ptriple + phr), 4)
-	return(psingle,pdouble,ptriple,phr,pOUT)
+	try:
+		player = table.find(text = re.compile(player)).find_parent("tr")
+		cells = player.findAll('td')
+		stat = [cell.text.strip('\n') for cell in cells]
+		# stat is line of player's stats
+		# calculations below find percents of singles/hits, doubles/hits, etc
+		single = float(stat[4]) - (float(stat[5]) + float(stat[6]) + float(stat[7]))
+		psingle = round(single/float(stat[2]), 4)
+		pdouble = round(float(stat[5])/float(stat[2]), 4)
+		ptriple = round(float(stat[6])/float(stat[2]), 4)
+		phr = round(float(stat[7])/float(stat[2]), 4)
+		pOUT = round(1 - (psingle + pdouble + ptriple + phr), 4)
+		return(psingle,pdouble,ptriple,phr,pOUT)
+	except:
+		player = table.find(text = re.compile('Totals')).find_parent("tr")
+		cells = player.findAll('td')
+		stat = [cell.text.strip('\n') for cell in cells]
+		# stat is line of player's stats
+		# calculations below find percents of singles/hits, doubles/hits, etc
+		single = float(stat[4]) - (float(stat[5]) + float(stat[6]) + float(stat[7]))
+		psingle = round(single/float(stat[2]), 4)
+		pdouble = round(float(stat[5])/float(stat[2]), 4)
+		ptriple = round(float(stat[6])/float(stat[2]), 4)
+		phr = round(float(stat[7])/float(stat[2]), 4)
+		pOUT = round(1 - (psingle + pdouble + ptriple + phr), 4)
+		return(psingle,pdouble,ptriple,phr,pOUT)

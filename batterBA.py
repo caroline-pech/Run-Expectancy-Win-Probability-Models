@@ -11,10 +11,20 @@ def get_ba(player, team):
 	soup = BeautifulSoup(page.read(), "html.parser")
 	table = soup.find(text = re.compile("NAME")).find_parent("table")
 	rows = table.findAll('tr')
-	player = table.find(text = re.compile(player)).find_parent("tr")
-	cells = player.findAll('td')
-	# stat is stat line of all players stats
-	stat = [cell.text.strip('\n') for cell in cells]
-	# stat[13] is player's batting average
-	BA = float(stat[13])
-	return(BA)
+	try:
+		player = table.find(text = re.compile(player)).find_parent("tr")
+		cells = player.findAll('td')
+		# stat is stat line of all players stats
+		stat = [cell.text.strip('\n') for cell in cells]
+		# stat[13] is player's batting average
+		BA = float(stat[13])
+		return(BA)
+	except:
+		player = table.find(text = re.compile('Totals')).find_parent("tr")
+		cells = player.findAll('td')
+		# stat is stat line of all players stats
+		stat = [cell.text.strip('\n') for cell in cells]
+		# stat[13] is player's batting average
+		BA = float(stat[13])
+		return(BA)
+

@@ -41,15 +41,15 @@ guts_table <- read.csv("guts_table_2016.csv", header = TRUE)
 dimnames(guts_table)[[1]] <- guts_table$X
 guts_table$X <- NULL
 Run.Env <- read.csv("Run.Environments.csv", header = TRUE)
-player.info <- read.csv("player-info.csv", header=TRUE)
-player.info$X <- NULL
 deltaState <- read.csv("deltaState.csv", header=TRUE)
+activePlayers <- read.csv("activePlayers.csv", header=TRUE)
+activePlayers$X <- NULL
 library("devtools")
 devtools::install_github("stattleship/stattleship-r")
 library(stattleshipR)
 set_token("bf3c65fd3952ea434f4a96b641744475")
 
-################################
+### Run Expectancy ###
 
 #calculates wOBA for player
 player.wOBA <- function(batter.team, player_id, splits, table = guts_table, year = '2016'){
@@ -194,9 +194,9 @@ get.run.expectancy <- function(home.team, batter.team, batter.name, pitcher.name
   # for players with names like "C.J.", need to remove periods to run with stattleship
   name <-  gsub("\\."," ", batter.name)
   name <- gsub("  ", " ", name)
-  team <- as.character(team.info[batter.team, 8])
-  # if batter's name in in the player.info csv, use the given slug name. Otherwise, use the generic "mlb-firstname-lastname"
-  player_id <- ifelse(batter.name %in% player.info$name, as.character(subset(player.info, team == player.info$team & player.info$name == batter.name)$slug), tolower(paste('mlb', as.character(gsub(" ", "-", name)), sep ="-")))
+  # team <- as.character(team.info[batter.team, 2])
+  # if batter's name in in the activePlayers csv, use the given slug name. Otherwise, use the generic "mlb-firstname-lastname"
+  player_id <- ifelse(batter.name %in% activePlayers$Name, as.character(subset(activePlayers, batter.team == activePlayers$Team & activePlayers$Name == batter.name)$Slug), tolower(paste('mlb', as.character(gsub(" ", "-", name)), sep ="-")))
   # get stat line (and calculate wOBA) for given player
   stats <- player.wOBA(batter.team, player_id, splits, table, '2016')
   # get current league wOBA and the scale for run value per plate appearance calculation
@@ -246,19 +246,7 @@ fun1 <- function(home.team,batter.team,pitcher.team,pitcher.name,state,count,bat
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+### Win Probability ###
 
 # get percents of singles, doubles, triples, and homeruns out of all player's hits
 get.percents <- function(batter.team, batter.name, team.info = teams){
@@ -446,7 +434,7 @@ pitcher.batter.WP <- function(wpstates, half.inning, state, count, rdiff, home.t
     # get team abbreviation 
     team <- as.character(team.info[pitcher.team, 8])
     # if pitcher is in list of current players, get corresponding slug name, otherwise use generic form of "mlb-firstname-lastname"
-    pitcher.player.id <- ifelse(pitcher.name %in% player.info$name, as.character(subset(player.info, team == player.info$team & player.info$name == pitcher.name)$slug), tolower(paste('mlb', as.character(gsub(" ", "-", name)), sep ="-")))
+    pitcher.player.id <- ifelse(pitcher.name %in% activePlayers$Name, as.character(subset(activePlayers, team == activePlayers$Team & activePlayers$Name == pitcher.name)$Slug), tolower(paste('mlb', as.character(gsub(" ", "-", name)), sep ="-")))
     # run matchup function and return specific win probability given pitcher and batter
     pitcher.batter.matchup <- matchup(batter.team, batter.name, pitcher.player.id, wpstates, half.inning, state, count, rdiff, home.team, visiting.team, pitcher.name, pitcher.team, cs, records, team.info, league)
     win.prob <- standings(home.team, visiting.team, teams, records, pitcher.batter.matchup, half.inning)

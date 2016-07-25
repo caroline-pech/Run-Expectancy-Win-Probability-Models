@@ -11,18 +11,22 @@ shinyServer(function(input, output) {
         available.pitchers <- (as.character(pitcherData[which(teams[input$pitcher, 5]==pitcherData$mlb_team),4]))
         selectizeInput("namePitcher","Pitcher's Name:", available.pitchers, options = list(placeholder = 'Please select a pitcher', onInitialize = I('function() { this.setValue(""); }')))})
       output$nameBatter <- renderUI({
-        available.batters <- (as.character(player.info[which(teams[input$batter, 5]==player.info$team),5]))
+        available.batters <- (as.character(activePlayers[which(teams[input$batter, 2]==activePlayers$Team),1]))
         selectizeInput("nameBatter","Batter's Name:", available.batters, options = list(placeholder = 'Please select a batter', onInitialize = I('function() { this.setValue(""); }')))})})
   b <- observeEvent(input$info.button, {
     batter.team <- ifelse(input$half.inning == 'Top', paste(input$visiting.team), paste(input$home.team))
+    print(batter.team)
     pitcher.team <- ifelse(input$half.inning == 'Top', paste(input$home.team), paste(input$visiting.team))
     output$pitcher.name <- renderUI({
       available.pitchers <- (as.character(pitcherData[which(teams[pitcher.team, 5]==pitcherData$mlb_team),4]))
       selectizeInput("pitcher.name","Pitcher's Name:", available.pitchers, options = list(placeholder = 'Please select a pitcher', onInitialize = I('function() { this.setValue(""); }')))})
     output$batter.name <- renderUI({
-      available.batters <- (as.character(player.info[which(teams[batter.team, 5]==player.info$team),5]))
+      available.batters <- as.character(activePlayers[which(teams[batter.team, 2]==activePlayers$Team),1])
       selectizeInput("batter.name","Batter's Name:", available.batters, options = list(placeholder = 'Please select a batter', onInitialize = I('function() { this.setValue(""); }')))})})
   WP <- observeEvent(input$state.button,{
+          if(input$inning > 9){
+            input$inning <- 9
+          }
           batter.team <- ifelse(input$half.inning == 'Top', input$visiting.team, input$home.team)
           pitcher.team <- ifelse(input$half.inning == 'Top', input$home.team, input$visiting.team)
           runners <- paste(ifelse(input$s.first == 'Yes', 1, 0), ifelse(input$s.second == 'Yes', 1, 0), ifelse(input$s.third == 'Yes', 1, 0), sep="")
