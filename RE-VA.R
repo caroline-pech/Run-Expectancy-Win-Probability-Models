@@ -364,21 +364,22 @@ matchup <- function(batter.team, batter.name, pitcher.player.id,wpstates, half.i
   # run differential if a home run is hit
   hr.rdiff <-  get.hr.rdiff(state, half.inning, rdiff)
   # calculate the current Win Probability using WP function
-  currentWP <- corrector(half.inning, state, rdiff, wpstates)
+  currentWP <- corrector(half.inning, state, rdiff, count, wpstates, cs)
   # calculate the win probability if a single is hit
-  WPsingle <- corrector(half.inning, s.state, s.rdiff, wpstates)
+  WPsingle <- corrector(half.inning, s.state, s.rdiff, count, wpstates, cs)
   WPsingle[is.na(WPsingle)] <- 0
   # calculate the win probability if a double is hit
-  WPdouble <- corrector(half.inning, d.state, d.rdiff, wpstates)
+  WPdouble <- corrector(half.inning, d.state, d.rdiff, count, wpstates, cs)
   WPdouble[is.na(WPdouble)] <- 0
   # calculate the win probability if a triple is hit
-  WPtriple <- corrector(half.inning, t.state, t.rdiff, wpstates)
+  WPtriple <- corrector(half.inning, t.state, t.rdiff, count, wpstates, cs)
   WPtriple[is.na(WPtriple)] <- 0
   # calculate the win probability if a home run is hit
-  WPhr <- corrector(half.inning, hr.state, hr.rdiff, wpstates)
+  WPhr <- corrector(half.inning, hr.state, hr.rdiff, count, wpstates, cs)
   WPtriple[is.na(WPtriple)] <- 0
   # calculate the win probability if an out is made
-  WPout <- corrector(half.inning, out.state, rdiff, wpstates)
+  WPout <- corrector(half.inning, out.state, rdiff, count, wpstates, cs)
+  WPout[is.na(WPout)] <- 0
   # account for ninth inning edge cases
   # if top of the ninth and two outs - win prob out an out is zero
   if(half.inning == '9 0' & substr(state, 5,5) == 2 & rdiff > 0){
@@ -440,7 +441,7 @@ pitcher.batter.WP <- function(wpstates, half.inning, state, count, rdiff, home.t
     pitcher.batter.matchup <- matchup(batter.team, batter.name, pitcher.player.id, wpstates, half.inning, state, count, rdiff, home.team, visiting.team, pitcher.name, pitcher.team, cs, records, team.info, league)
     # if an extreme edge case and NA is returned despite corrective factors, return baseline value for game situation
     if(is.na(pitcher.batter.matchup == TRUE)){
-      pitcher.batter.matchup <- corrector(half.inning, state, rdiff, wpstates)
+      pitcher.batter.matchup <- corrector(half.inning, state, rdiff, count, wpstates, cs)
     }
     win.prob <- standings(home.team, visiting.team, teams, records, pitcher.batter.matchup, half.inning)
     return(win.prob) 
@@ -525,14 +526,27 @@ run.correction <- function(half.inning, state, rdiff, wpstates){
   }
 }
 # take average of state correction and run correction
-corrector <- function(half.inning, state, rdiff, wpstates){
+corrector <- function(half.inning, state, rdiff, count, wpstates, cs){
   A <- state.correction(half.inning, state, rdiff, wpstates)
   B <- run.correction(half.inning, state, rdiff, wpstates)
-  corrector <- (A+B)/2
-  return(corrector)
+  wpstate <- (A+B)/2
+  wpstate.plus.one.run <- ifelse(substr(half.inning, 3, 3) == '0', (state.correction(half.inning, state, rdiff - 1, wpstates) + run.correction(half.inning, state, rdiff - 1, wpstates))/2, (state.correction(half.inning, state, rdiff + 1, wpstates) + run.correction(half.inning, state, rdiff + 1, wpstates))/2)
+  # calculate the difference in the win probabilities
+  state.dif <- (wpstate.plus.one.run - wpstate)
+  # find the run expectancy with the current state and count
+  re <- cs[state,count]
+  # find the general run expectancy just with the base/out state (count back to 0-0) 
+  raw.re <- cs[state,2]
+  # find the change in the run expectancy
+  dif <- (as.numeric(re) - as.numeric(raw.re))/as.numeric(raw.re)
+  delta <- state.dif * dif
+  # add the current win probability to the change if a run scored
+  dynamic.state <- wpstate + delta
+  return(dynamic.state)
 }
 # lastly, factor in teams W-L record for team v team matchup
 standings <- function(home.team, visiting.team, teams, records, wpstate, half.inning){
+  print(wpstate)
   hleague <- teams[home.team, 3]
   # get league of away team
   aleague <- teams[visiting.team, 3]

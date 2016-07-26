@@ -44,7 +44,8 @@ shinyServer(function(input, output) {
       b.league <- (as.character(teams[batter.team, 3]))
       p.league <- (as.character(teams[pitcher.team, 3]))
       league <- ifelse(b.league == p.league, b.league, 'inter')
-      rdiff <- ifelse(abs(as.numeric(input$home.score) - as.numeric(input$vis.score)) > 10, 10, as.numeric(input$home.score) - as.numeric(input$vis.score))
+      rdiff <- as.numeric(input$home.score) - as.numeric(input$vis.score)
+      if(rdiff > 8){rdiff <- 8}else if(rdiff < -8){rdiff <- -8}
       home.win.prob <- pitcher.batter.WP(wpstates, half.inning, state, count, rdiff, input$home.team, input$visiting.team, input$pitcher.name, input$batter.name, pitcher.team, batter.team, count.state, records, teams, league)
       print(home.win.prob)
       if(home.win.prob == 'Impossible'){
