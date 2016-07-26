@@ -40,7 +40,9 @@ dimnames(wpstates)[[2]] <- c("State","WP",'Num')
 guts_table <- read.csv("guts_table_2016.csv", header = TRUE)
 dimnames(guts_table)[[1]] <- guts_table$X
 guts_table$X <- NULL
+# Run environment is table of run environments from 1990-2015
 Run.Env <- read.csv("Run.Environments.csv", header = TRUE)
+# deltaState gives the new state if a single, double, etc. is hit
 deltaState <- read.csv("deltaState.csv", header=TRUE)
 activePlayers <- read.csv("activePlayers.csv", header=TRUE)
 activePlayers$X <- NULL
@@ -306,12 +308,13 @@ matchup <- function(batter.team, batter.name, pitcher.player.id,wpstates, half.i
   # get batter's batting average
   x <- as.numeric(get.ba(batter.team, batter.name, team.info))
   # get pitcher's batting average against
+  if(league == 'inter'){league <- as.character(teams[pitcher.team, 3])}
   y <- as.numeric(get.baa(pitcher.player.id, league))
   # get league batting average
+  if(league == 'inter'){league <- as.character(teams[batter.team, 3])}
   z <- league.ba(league)
   # use log5 formula to calculate probability of a hit for the batter
   exAVG <- ((x*y)/z)/(((x*y)/z) + ((1 -x)*(1-y))/(1-z))
-  # 
   deltaAVG <- (exAVG - z) + 1
   # get percentages of singles, double, triples, homeruns from number of hits
   batterPercentages <- as.numeric(get.percents(batter.team, batter.name))
@@ -361,37 +364,34 @@ matchup <- function(batter.team, batter.name, pitcher.player.id,wpstates, half.i
   # run differential if a home run is hit
   hr.rdiff <-  get.hr.rdiff(state, half.inning, rdiff)
   # calculate the current Win Probability using WP function
-  # currentWP <- WP(wpstates, half.inning, state, count, rdiff, home.team, visiting.team, cs, records, team.info)
   currentWP <- corrector(half.inning, state, rdiff, wpstates)
   # calculate the win probability if a single is hit
-  # WPsingle <- WP(wpstates, half.inning, s.state, 'c00', s.rdiff, home.team, visiting.team, cs, records, team.info)
   WPsingle <- corrector(half.inning, s.state, s.rdiff, wpstates)
   WPsingle[is.na(WPsingle)] <- 0
   # calculate the win probability if a double is hit
-  # WPdouble <- WP(wpstates, half.inning, d.state, 'c00', d.rdiff, home.team, visiting.team, cs, records, team.info)
   WPdouble <- corrector(half.inning, d.state, d.rdiff, wpstates)
   WPdouble[is.na(WPdouble)] <- 0
   # calculate the win probability if a triple is hit
-  # WPtriple <- WP(wpstates, half.inning, t.state, 'c00', t.rdiff, home.team, visiting.team, cs, records, team.info)
   WPtriple <- corrector(half.inning, t.state, t.rdiff, wpstates)
   WPtriple[is.na(WPtriple)] <- 0
   # calculate the win probability if a home run is hit
-  # WPhr <- WP(wpstates, half.inning, hr.state, 'c00', hr.rdiff, home.team, visiting.team, cs, records, team.info)
   WPhr <- corrector(half.inning, hr.state, hr.rdiff, wpstates)
   WPtriple[is.na(WPtriple)] <- 0
   # calculate the win probability if an out is made
-  # WPout <- WP(wpstates, out.half.inning, out.state, 'c00', rdiff, home.team, visiting.team, cs, records, team.info)
   WPout <- corrector(half.inning, out.state, rdiff, wpstates)
-  # sum the differences in win probabilities for each scenario multiplied by their corresponding probabilities
+  # account for ninth inning edge cases
+  # if top of the ninth and two outs - win prob out an out is zero
   if(half.inning == '9 0' & substr(state, 5,5) == 2 & rdiff > 0){
     WPout <- 0
   }
+  # if bottom of the ninth and a single, double, triple, or hr would cause a walk off win, win-prob of that event is 1
   if(half.inning == '9 1'){
     WPsingle <- ifelse(s.rdiff > 0, 1, WPsingle)
     WPdouble <- ifelse(d.rdiff > 0, 1, WPdouble)
     WPtriple <- ifelse(t.rdiff > 0, 1, WPtriple)
     WPhr <- ifelse(hr.rdiff > 0, 1, WPhr)
   }
+  # sum the differences in win probabilities for each scenario multiplied by their corresponding probabilities
   delta <- ((WPout - currentWP)*pout) + ((WPsingle - currentWP)*psingle) + ((WPdouble - currentWP)*pdouble) + ((WPtriple - currentWP)*ptriple) + ((WPhr - currentWP)*phr)
   # return the new win probability given the pitcher/batter calculations
   newWP <- (as.numeric(currentWP*100)) + delta
@@ -425,6 +425,7 @@ get.hr.rdiff <- function(state, half.inning, rdiff){
 }
 # run matchup function using all variables
 pitcher.batter.WP <- function(wpstates, half.inning, state, count, rdiff, home.team, visiting.team, pitcher.name, batter.name, pitcher.team, batter.team, cs, records, team.info, league){
+  # impossible for home team to be leading in the top of the first or for the game to go to the bottom of the ninth if home team is ahead
   if(rdiff > 0 & (half.inning == '1 0'|half.inning == '9 1')){
     return('Impossible')
   }else{
@@ -437,66 +438,85 @@ pitcher.batter.WP <- function(wpstates, half.inning, state, count, rdiff, home.t
     pitcher.player.id <- ifelse(pitcher.name %in% activePlayers$Name, as.character(subset(activePlayers, team == activePlayers$Team & activePlayers$Name == pitcher.name)$Slug), tolower(paste('mlb', as.character(gsub(" ", "-", name)), sep ="-")))
     # run matchup function and return specific win probability given pitcher and batter
     pitcher.batter.matchup <- matchup(batter.team, batter.name, pitcher.player.id, wpstates, half.inning, state, count, rdiff, home.team, visiting.team, pitcher.name, pitcher.team, cs, records, team.info, league)
+    # if an extreme edge case and NA is returned despite corrective factors, return baseline value for game situation
+    if(is.na(pitcher.batter.matchup == TRUE)){
+      pitcher.batter.matchup <- corrector(half.inning, state, rdiff, wpstates)
+    }
     win.prob <- standings(home.team, visiting.team, teams, records, pitcher.batter.matchup, half.inning)
     return(win.prob) 
   }
 }
-
-# change NA results from calling WP to zero
- 
+# run corrective measures for state values
 state.correction <- function(half.inning, state, rdiff, wpstates){
+  # states in order from lowest win probability to highest win probability
   states <- c('000 2','100 2','000 1','010 2','001 2','110 2','101 2','000 0','100 1','011 2','010 1','111 2','100 0','110 1','001 1','010 0','101 1','011 1','001 0','110 0','111 1','101 0','011 0','111 0')
+  # select current permutation, and get all permutations with the other base/out states
   perm <- paste(half.inning, state, rdiff, sep = " ")
   perms <- c(paste(half.inning,states[1],rdiff,sep = " "),paste(half.inning,states[2],rdiff,sep = " "),paste(half.inning,states[3],rdiff,sep = " "),paste(half.inning,states[4],rdiff,sep = " "),paste(half.inning,states[5],rdiff,sep = " "),paste(half.inning,states[6],rdiff,sep = " "),paste(half.inning,states[7],rdiff,sep = " "),paste(half.inning,states[8],rdiff,sep = " "),paste(half.inning,states[9],rdiff,sep = " "),paste(half.inning,states[10],rdiff,sep = " "),
              paste(half.inning,states[11],rdiff,sep = " "),paste(half.inning,states[12],rdiff,sep = " "),paste(half.inning,states[13],rdiff,sep = " "),paste(half.inning,states[14],rdiff,sep = " "),paste(half.inning,states[15],rdiff,sep = " "),paste(half.inning,states[16],rdiff,sep = " "),paste(half.inning,states[17],rdiff,sep = " "),paste(half.inning,states[18],rdiff,sep = " "),paste(half.inning,states[19],rdiff,sep = " "),paste(half.inning,states[20],rdiff,sep = " "),
              paste(half.inning,states[21],rdiff,sep = " "),paste(half.inning,states[22],rdiff,sep = " "),paste(half.inning,states[23],rdiff,sep = " "),paste(half.inning,states[24],rdiff,sep = " "))
-  
+  # find the win probability with all of the base/out states
   allstates <- c((subset(wpstates, wpstates$State == perms[1]))$WP,(subset(wpstates, wpstates$State == perms[2]))$WP,(subset(wpstates, wpstates$State == perms[3]))$WP,(subset(wpstates, wpstates$State == perms[4]))$WP,(subset(wpstates, wpstates$State == perms[5]))$WP,(subset(wpstates, wpstates$State == perms[6]))$WP,(subset(wpstates, wpstates$State == perms[7]))$WP,(subset(wpstates, wpstates$State == perms[8]))$WP,(subset(wpstates, wpstates$State == perms[9]))$WP,(subset(wpstates, wpstates$State == perms[10]))$WP,(subset(wpstates, wpstates$State == perms[11]))$WP,(subset(wpstates, wpstates$State == perms[12]))$WP,(subset(wpstates, wpstates$State == perms[13]))$WP,(subset(wpstates, wpstates$State == perms[14]))$WP,(subset(wpstates, wpstates$State == perms[15]))$WP,(subset(wpstates, wpstates$State == perms[16]))$WP,(subset(wpstates, wpstates$State == perms[17]))$WP,(subset(wpstates, wpstates$State == perms[18]))$WP,(subset(wpstates, wpstates$State == perms[19]))$WP,(subset(wpstates, wpstates$State == perms[20]))$WP,(subset(wpstates, wpstates$State == perms[21]))$WP,(subset(wpstates, wpstates$State == perms[22]))$WP,(subset(wpstates, wpstates$State == perms[23]))$WP,(subset(wpstates, wpstates$State == perms[24]))$WP)
+  # if top of the inning, home win probability should be going down in better states (decreasing order)
   if(substr(half.inning,3,3) == '0'){
     sorted <- sort(allstates, decreasing = TRUE)
     index <- (as.numeric(which(perms == perm)))
     wpstate <- sorted[index]
   }else if(substr(half.inning,3,3) == '1'){
+    # otherwise sort in increasing order
     sorted <- sort(allstates)
     index <- as.numeric(which(perms == perm))
     wpstate <- sorted[index]
   }
+  # return values between 0 and 1 only
   ifelse(wpstate >= 1, return(0.9999), return(wpstate))
   ifelse(wpstate <= 0, return(0.0001), return(wpstate))
 }
-
+# run corrective measures for run values
 run.correction <- function(half.inning, state, rdiff, wpstates){
+  # if top of the inning and home team leading:
   if(substr(half.inning,3,3) == '0'){
     if(rdiff > 0){
+      # calculate WP for same state in all other innings (not top of first since home team could not be ahead)
       upper <- c(state.correction('2 0', state, rdiff, wpstates), state.correction('3 0', state, rdiff, wpstates),
                  state.correction('4 0', state, rdiff, wpstates), state.correction('5 0', state, rdiff, wpstates), state.correction('6 0', state, rdiff, wpstates),
                  state.correction('7 0', state, rdiff, wpstates), state.correction('8 0', state, rdiff, wpstates), state.correction('9 0', state, rdiff, wpstates))
+      # sort in order and select value that is in same order of the basic win probabilities for the base/out states
       index <- as.numeric(substr(half.inning,1,1)) - 1 
       sorted <- sort(upper)
       updated <- sorted[index]
       return(min(updated, 0.9999))
+      # top of the inning and visiting team leading:
     }else{
+      # calculate WP for same state in all other innings
       upper <- c(state.correction('1 0', state, rdiff, wpstates), state.correction('2 0', state, rdiff, wpstates), state.correction('3 0', state, rdiff, wpstates),
                  state.correction('4 0', state, rdiff, wpstates), state.correction('5 0', state, rdiff, wpstates), state.correction('6 0', state, rdiff, wpstates),
                  state.correction('7 0', state, rdiff, wpstates), state.correction('8 0', state, rdiff, wpstates), state.correction('9 0', state, rdiff, wpstates))
+      # sort in order and select value that is in same order of the basic win probabilities for the base/out states
       index <- as.numeric(substr(half.inning,1,1))
       sorted <- sort(upper, decreasing = TRUE)
       updated <- sorted[index]
       return(max(updated, 0.0001))
     }
+    # bottom of the inning and home team winning:
   }else if(substr(half.inning,3,3) == '1'){
     if(rdiff > 0){
+      # calculate WP for same state in all other innings (not bottom of ninth since game would be over)
       lower <- c(state.correction('1 1', state, rdiff, wpstates), state.correction('2 1', state, rdiff, wpstates), state.correction('3 1', state, rdiff, wpstates),
                  state.correction('4 1', state, rdiff, wpstates), state.correction('5 1', state, rdiff, wpstates), state.correction('6 1', state, rdiff, wpstates),
                  state.correction('7 1', state, rdiff, wpstates), state.correction('8 1', state, rdiff, wpstates))
+      # sort in order and select value that is in same order of the basic win probabilities for the base/out states
       index <- as.numeric(substr(half.inning,1,1)) 
       sorted <- sort(lower)
       updated <- sorted[index]
       return(min(updated, 0.9999))
+      # bottom of the inning and visiting team winning:
     }else{
+      # calculate WP for same state in all other innings
       lower <- c(state.correction('1 1', state, rdiff, wpstates), state.correction('2 1', state, rdiff, wpstates), state.correction('3 1', state, rdiff, wpstates),
                  state.correction('4 1', state, rdiff, wpstates), state.correction('5 1', state, rdiff, wpstates), state.correction('6 1', state, rdiff, wpstates),
                  state.correction('7 1', state, rdiff, wpstates), state.correction('8 1', state, rdiff, wpstates), state.correction('9 1', state, rdiff, wpstates))
+      # sort in order and select value that is in same order of the basic win probabilities for the base/out states
       index <- as.numeric(substr(half.inning,1,1))
       sorted <- sort(lower, decreasing = TRUE)
       updated <- sorted[index]
@@ -504,14 +524,14 @@ run.correction <- function(half.inning, state, rdiff, wpstates){
     }
   }
 }
-
+# take average of state correction and run correction
 corrector <- function(half.inning, state, rdiff, wpstates){
   A <- state.correction(half.inning, state, rdiff, wpstates)
   B <- run.correction(half.inning, state, rdiff, wpstates)
   corrector <- (A+B)/2
   return(corrector)
 }
-
+# lastly, factor in teams W-L record for team v team matchup
 standings <- function(home.team, visiting.team, teams, records, wpstate, half.inning){
   hleague <- teams[home.team, 3]
   # get league of away team
@@ -565,6 +585,7 @@ standings <- function(home.team, visiting.team, teams, records, wpstate, half.in
   x <- P.ab - 0.50
   # value the team standings propotionally less as the game continues, and multiply by updated state to get the win probability with the team standings
   wp.with.team.standing <- as.numeric(wpstate)*(1+x/as.numeric(substr(half.inning,1,1)))
+  # check that high probability cases do not exceed 1 and low probability cases do not fall below 0
   if(wpstate > 0.90){
     wp.with.team.standing <- min(wp.with.team.standing, 0.9999)
   }else if(wpstate < 0.1){
@@ -572,12 +593,3 @@ standings <- function(home.team, visiting.team, teams, records, wpstate, half.in
   }
   return(round(wp.with.team.standing,3))
 }
-
-
-
-
-
-
-
-
-

@@ -15,6 +15,11 @@
 \b\fs32 \cf0 1990.2015.RE.States.Count.csv
 \b0\fs28   \'97 csv written by 1990 - 2015 state/count expectancies.R and used in main R file (RE-VA.R). Contains the run expectancy for the 24 base/out states and for a given count. \
 
+\b\fs32 activePlayers.csv
+\b0\fs28  \'97 file with active players including name, slug, and current team. Needs to be updated frequently to get newly activated players. Use 
+\b activePlayers - script.R
+\b0  to run through all teams for list of all players. \
+
 \b\fs32 AL-standings.csv
 \b0\fs28  \'97 win/loss record for each team v. team combo. Used to get current winning percentage for each team as well as interleague record for interleague games. Updated each time ALstandings.py is run.  \
 
@@ -27,11 +32,8 @@
 \b\fs32 batterPercentages.py
 \b0\fs28  \'97 script to scrape current player\'92s percentages for hitting a single, double, triple, or homerun from ESPN\
 
-\b\fs32 batters.csv
-\b0\fs28  \'97 file with current active players including name, their position, and current team\
-
 \b\fs32 BPF-script.R 
-\b0\fs28 \'97 script to get updated batting park factors for all 30 teams in order to be referenced in run expectancy. Needs to be updated at the start of the new season with new game logs data from Retrosheet. 
+\b0\fs28 \'97 script to get updated batting park factors for all 30 teams in order to be referenced in run expectancy. Needs to be updated at the start of the new season with new game logs data from Retrosheet. *** This updates the current teams csv so that each team\'92s BPF is appended to the corresponding row. 
 \b\fs32 \
 deltaState.csv
 \b0\fs28  \'97 file with states and new states given a single, double, triple, or homerun. Used to figure out the change in win probability if a single is hit (or double, etc.) and then used to evaluate how the batter should change the win probability. \
@@ -43,7 +45,7 @@ deltaState.csv
 \b0\fs28  \'97 game logs from 2010-2015. Used to calculate Batting Park Factors. Only needs to be run at the beginning of the season with the addition of the most recent year of gamelogs from retrosheet \'97 writes to csv for every park in MLB.\
 
 \b\fs32 guts_table_2016.csv
-\b0\fs28  \'97 ESPN table with league wOBA and scale for each year. Needs to be updated frequently to maintain current year\'92s stats correctly.\
+\b0\fs28  \'97 ESPN table with league wOBA and scale for each year. Needs to be updated frequently to maintain current year\'92s stats correctly. In order to update, use guts-table-script.R for new csv file. \
 
 \b\fs32 leagueBA.py
 \b0\fs28  \'97 script to scrape the batting average for a given league (\'91AL\'92 or \'91NL\'92) from ESPN \
@@ -53,7 +55,9 @@ deltaState.csv
 
 \b\fs32 NLstandings.py
 \b0\fs28  \'97 script to scrape the current ESPN MLB standings grid to get the winning percentage for each team.\
-pitcherData-splits.csv\
+
+\b\fs32 pitcherData-splits.csv
+\b0\fs28  \'97 Left handed splits, right handed splits, and average splits for all current pitchers. \
 
 \b\fs32 pitcherData2016.csv
 \b0\fs28  \'97 pitchers active in 2016 with name, current tam, SP or RP, retrosheet id, retrosheet name, and debut date\
@@ -65,7 +69,7 @@ pitcherData-splits.csv\
 \b0\fs28  \'97 main R file called on by shinyapp server for calculations of run expectancy and win probability\
 
 \b\fs32 Run.Environments.csv
-\b0\fs28  \'97 run environments from 1990 - 2016. Needs to be updated frequenly to main current year\'92s stats correctly. \
+\b0\fs28  \'97 run environments from 1990 - 2016. Needs to be updated frequently to main current year\'92s stats correctly. \
 
 \b\fs32 server.R
 \b0\fs28  \'97 server for shinyapp \
@@ -87,7 +91,7 @@ Teams.csv\
 \b0\fs28  \'97 ui for shinyapp\
 
 \b\fs32 WPstates.csv
-\b0\fs28  \'97 basic win probabililty for giving inning, state, and run differential (home.score - away.score). Run on data from 2010-2015 \'97 needs to be rerun at the start of every season with new year of retrosheet data. \
+\b0\fs28  \'97 basic win probabililty for giving inning, state, and run differential (home.score - away.score). Run on data from 2010-2015 \'97 needs to be rerun at the start of every season with new year of retrosheet data. To update, run wpstates-script.R with the addition of the new retrosheet data.\
 
 \b\fs32 zzz.R
 \b0\fs28  \'97 another stattleship file }

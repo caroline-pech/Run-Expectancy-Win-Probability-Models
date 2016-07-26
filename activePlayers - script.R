@@ -13,8 +13,8 @@ get.batters <- function(batter.team, sport = sport, league = league, ep = ep){
   q_body <- list(team_id = league.team)
   pls <- ss_get_result(sport=sport, league=league, ep=ep, query=q_body, walk=TRUE)
   x <- do.call('rbind', lapply(pls, function(x) x$players))
-  y <- subset(x, x$active == TRUE)
-  return(y$name)
+  y <- subset(x, x$active == TRUE & x$position_name == 'Reliever' | x$position_name == 'Starter')
+  return(c(y$name,y$slug,y$position_name))
 }
 get.slugs <- function(batter.team, sport = sport, league = league, ep = ep){
   league.team <- paste(league, batter.team, sep = "-")
