@@ -13,8 +13,8 @@ get.batters <- function(batter.team, sport = sport, league = league, ep = ep){
   q_body <- list(team_id = league.team)
   pls <- ss_get_result(sport=sport, league=league, ep=ep, query=q_body, walk=TRUE)
   x <- do.call('rbind', lapply(pls, function(x) x$players))
-  y <- subset(x, x$active == TRUE & x$position_name == 'Reliever' | x$position_name == 'Starter')
-  return(c(y$name,y$slug,y$position_name))
+  y <- subset(x, x$active == TRUE)
+  return(y$name)
 }
 get.slugs <- function(batter.team, sport = sport, league = league, ep = ep){
   league.team <- paste(league, batter.team, sep = "-")
@@ -24,6 +24,7 @@ get.slugs <- function(batter.team, sport = sport, league = league, ep = ep){
   y <- subset(x, x$active == TRUE)
   return(y$slug)
 }
+
 batters <- mapply(get.batters, teams$batter.team, sport, league, ep)
 slugs <- mapply(get.slugs, teams$batter.team, sport, league, ep)
 x <- rbind(batters,slugs)
@@ -38,7 +39,3 @@ info <- rbind(get_df(1), get_df(2),get_df(3), get_df(4),get_df(5),get_df(6),get_
               get_df(11), get_df(12),get_df(13), get_df(14),get_df(15),get_df(16),get_df(17),get_df(18),get_df(19),get_df(20),
               get_df(21), get_df(22),get_df(23), get_df(24),get_df(25),get_df(26),get_df(27),get_df(28),get_df(29),get_df(30))
 write.csv(info, "activePlayers.csv")
-
-
-
-

@@ -25,12 +25,6 @@ game.logs <- read.csv("gamelogs.merged.csv", header = FALSE)[,1:12]
 headers <- read.csv("fields2.csv")
 names(game.logs) <- headers$Header
 splits <- read.csv("splits.csv", header = TRUE)
-pitcherSplits <- read.csv("pitcherData-splits.csv", header = TRUE)
-dimnames(pitcherSplits)[[1]] <- pitcherSplits$X
-pitcherSplits$X <- NULL
-pitcherData <- read.csv("pitcherData2016.csv", header=TRUE)
-dimnames(pitcherData)[[1]] <- pitcherData$X
-pitcherData$X <- NULL
 # count.state is the file that is produced from run expectancy matrix with states and counts from 1990 - 2015
 count.state <- read.csv("1990.2015.RE.States.Count.csv")
 dimnames(count.state)[[1]] <- count.state[, 1]
@@ -46,6 +40,10 @@ Run.Env <- read.csv("Run.Environments.csv", header = TRUE)
 deltaState <- read.csv("deltaState.csv", header=TRUE)
 activePlayers <- read.csv("activePlayers.csv", header=TRUE)
 activePlayers$X <- NULL
+activePitchers <- read.csv("activePitchers.csv", header = TRUE)
+activePitchers$X <- NULL
+pitcher.info <- read.csv("pitcher.info.csv", header=TRUE)
+pitcher.info$X <- NULL
 library("devtools")
 devtools::install_github("stattleship/stattleship-r")
 library(stattleshipR)
@@ -173,14 +171,14 @@ average.catcher.woba <- function(splits, table = guts_table, year = '2015'){
   return(avg.catcher.woba)
 }
 # get retrosheet id for a given pitcher (with current team) to get pitcher stats
-get.retrosheet.id <- function(pitcher.name, pitcher.team, pitcherData){
+get.retrosheet.id <- function(pitcher.name, pitcher.team, pitcher.info){
   info <- paste(pitcher.team, pitcher.name)
   # find retrosheet id using pitcher's name and current team
-  retrosheet.id <- pitcherData[info, 3]
+  retrosheet.id <- pitcher.info[info,1]
   return(retrosheet.id)
 }
 # get run expectancy with various variables as inputs
-get.run.expectancy <- function(home.team, batter.team, batter.name, pitcher.name, pitcher.team, year = '2016', psplits = pitcherSplits, table = guts_table, team.info = teams){
+get.run.expectancy <- function(home.team, batter.team, batter.name, pitcher.name, pitcher.team, year = '2016', pitcher.info, table = guts_table, team.info = teams){
   # get park factors from previous three years (can't use current year's data)
   BPF <- team.info[home.team, 9]
   # get home team, batter team, and pitcher team abbreviations
@@ -188,11 +186,10 @@ get.run.expectancy <- function(home.team, batter.team, batter.name, pitcher.name
   batter.team <- team.info[batter.team, 2]
   pitcher.team <- team.info[pitcher.team, 5]
   #pitching stats -- get L/R splits (wOBA)
-  pitcher.retrosheet.id <- as.character(get.retrosheet.id(pitcher.name, pitcher.team, pitcherData))
-  p.splits <- psplits[, pitcher.retrosheet.id]
-  p.splits.R <- ifelse(p.splits[1] == 0, p.splits[3], p.splits[1])
-  p.splits.L <- ifelse(p.splits[2] == 0, p.splits[3], p.splits[2])
-  avg <- p.splits[3]
+  pitcher.retrosheet.id <- as.character(get.retrosheet.id(pitcher.name, pitcher.team, pitcher.info))
+  p.splits.R <- subset(pitcher.info, pitcher.info$retro_id == pitcher.retrosheet.id)$Right
+  p.splits.L <-subset(pitcher.info, pitcher.info$retro_id == pitcher.retrosheet.id)$Left
+  avg <- subset(pitcher.info, pitcher.info$retro_id == pitcher.retrosheet.id)$Average
   # for players with names like "C.J.", need to remove periods to run with stattleship
   name <-  gsub("\\."," ", batter.name)
   name <- gsub("  ", " ", name)
@@ -242,7 +239,7 @@ fun1 <- function(home.team,batter.team,pitcher.team,pitcher.name,state,count,bat
   if(batter.team == pitcher.team){
     return('Not a Valid Matchup')
   }else{
-    stats <- get.run.expectancy(home.team,batter.team,batter.name, pitcher.name,pitcher.team)
+    stats <- get.run.expectancy(home.team,batter.team,batter.name, pitcher.name,pitcher.team, year, pitcher.info, guts_table, teams)
     RE <- main.function(state,count,batter.name, stats)
     return(RE)
   }
@@ -546,7 +543,6 @@ corrector <- function(half.inning, state, rdiff, count, wpstates, cs){
 }
 # lastly, factor in teams W-L record for team v team matchup
 standings <- function(home.team, visiting.team, teams, records, wpstate, half.inning){
-  print(wpstate)
   hleague <- teams[home.team, 3]
   # get league of away team
   aleague <- teams[visiting.team, 3]
@@ -605,5 +601,13 @@ standings <- function(home.team, visiting.team, teams, records, wpstate, half.in
   }else if(wpstate < 0.1){
     wp.with.team.standing <- max(wp.with.team.standing, 0.01)
   }
-  return(round(wp.with.team.standing,3))
+  bpf <- as.numeric(team.info[home.team, 9])
+  if(bpf > 1){
+    pf <- wp.with.team.standing * bpf
+    dif <- pf - wp.with.team.standing
+    wp.team.park <- wp.with.team.standing - dif
+  }else{
+    wp.team.park <- wp.with.team.standing * bpf
+  }
+  return(round(wp.team.park,3))
 }
