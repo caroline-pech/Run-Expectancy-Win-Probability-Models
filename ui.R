@@ -2,7 +2,7 @@ teams <- read.csv("teams2016.csv", header = TRUE)
 dimnames(teams)[[1]] <- teams$X
 teams$X <- NULL
 library(shinydashboard)
-
+input.batter.name <- 0
 sidebar <- dashboardSidebar(width = 250, sidebarMenu(
                             menuItem("Win Probability - Matchups", tabName = 'wpSpecific', icon = icon('fa fa-angle-right')),
                             menuItem("Run Expectancy", tabName = "re", icon = icon("fa fa-angle-right"))))
@@ -69,7 +69,7 @@ body <- dashboardBody(
                           radioButtons('balls','Balls?',c('0','1','2','3'),inline=TRUE),
                           br(),
                           radioButtons('strikes','Strikes?',c('0','1','2'),inline=TRUE),
-                          actionButton("state.button", "Get Win Probability",style="color: #lightgrey; background-color: #337ab7; border-color: #2e6da4"))),
+                          uiOutput("state.button"))),
                           infoBoxOutput("home"),
                           infoBoxOutput("away"))))
 dashboardPage(
