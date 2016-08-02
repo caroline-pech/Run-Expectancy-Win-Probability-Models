@@ -33,3 +33,4 @@ def get_ba(player, team):
 		# stat[13] is player's batting average
 		BA = float(stat[13])
 	return(BA)
+print(get_ba('David Ortiz', 'bos'))

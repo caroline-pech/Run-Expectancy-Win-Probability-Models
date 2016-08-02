@@ -18,11 +18,11 @@ def get_percentages(player, team):
 		# stat is line of player's stats
 		# calculations below find percents of singles/hits, doubles/hits, etc
 		single = float(stat[4]) - (float(stat[5]) + float(stat[6]) + float(stat[7]))
-		psingle = round(single/float(stat[2]), 4)
-		pdouble = round(float(stat[5])/float(stat[2]), 4)
-		ptriple = round(float(stat[6])/float(stat[2]), 4)
-		phr = round(float(stat[7])/float(stat[2]), 4)
-		pOUT = round(1 - (psingle + pdouble + ptriple + phr), 4)
+		psingle = round(single/float(stat[4]), 4)
+		pdouble = round(float(stat[5])/float(stat[4]), 4)
+		ptriple = round(float(stat[6])/float(stat[4]), 4)
+		phr = round(float(stat[7])/float(stat[4]), 4)
+		pOUT = round((float(stat[2]) - float(stat[4]))/float(stat[2]), 4)
 		return(psingle,pdouble,ptriple,phr,pOUT)
 	except:
 		player = table.find(text = re.compile('Totals')).find_parent("tr")
@@ -31,9 +31,9 @@ def get_percentages(player, team):
 		# stat is line of player's stats
 		# calculations below find percents of singles/hits, doubles/hits, etc
 		single = float(stat[4]) - (float(stat[5]) + float(stat[6]) + float(stat[7]))
-		psingle = round(single/float(stat[2]), 4)
-		pdouble = round(float(stat[5])/float(stat[2]), 4)
-		ptriple = round(float(stat[6])/float(stat[2]), 4)
-		phr = round(float(stat[7])/float(stat[2]), 4)
-		pOUT = round(1 - (psingle + pdouble + ptriple + phr), 4)
+		psingle = round(single/float(stat[4]), 4)
+		pdouble = round(float(stat[5])/float(stat[4]), 4)
+		ptriple = round(float(stat[6])/float(stat[4]), 4)
+		phr = round(float(stat[7])/float(stat[4]), 4)
+		pOUT = round((float(stat[2]) - float(stat[4]))/float(stat[2]), 4)
 		return(psingle,pdouble,ptriple,phr,pOUT)
