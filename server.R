@@ -34,12 +34,12 @@ shinyServer(function(input, output){
     activePitchers <- subset(activePlayers, Position == 'Starter'|Position == 'Reliever'|Position == 'P')
     batter_team <- ifelse(input$half == 'Top', paste(input$visiting), paste(input$p.home))
     pitcher_team <- ifelse(input$half == 'Bottom', paste(input$visiting), paste(input$p.home))
-    output$pitcher <- renderUI({
+    output$the_pitcher <- renderUI({
       avail_pitchers <- (as.character(activePitchers[which(teams[pitcher_team, 2]==activePitchers$Team),1]))
-      selectizeInput("pitcher","Pitcher's Name:", avail_pitchers, options = list(placeholder = 'Please select a pitcher', onInitialize = I('function() { this.setValue(""); }')))})
-    output$batter <- renderUI({
+      selectizeInput("the_pitcher","Pitcher's Name:", avail_pitchers, options = list(placeholder = 'Please select a pitcher', onInitialize = I('function() { this.setValue(""); }')))})
+    output$the_batter <- renderUI({
       avail_batters <- (as.character(activePlayers[which(teams[batter_team, 2]==activePlayers$Team),1]))
-      selectizeInput("batter","Batter's Name:", avail_batters, options = list(placeholder = 'Please select a batter', onInitialize = I('function() { this.setValue(""); }')))})})
+      selectizeInput("the_batter","Batter's Name:", avail_batters, options = list(placeholder = 'Please select a batter', onInitialize = I('function() { this.setValue(""); }')))})})
   e <- observeEvent(input$midbutton2,{
     activePitchers <- subset(activePlayers, Position == 'Starter'|Position == 'Reliever'|Position == 'P')
     batter_team <- ifelse(input$half2 == 'Top', paste(input$visiting2), paste(input$p.home2))
@@ -125,7 +125,7 @@ shinyServer(function(input, output){
     prob <- probabilities(batter_team, pitcher_team, input$batter, input$pitcher, league, p_state, p_count)      
     percent <- paste(prob, '%', sep = "")
     x <- data.table(percent)
-    dimnames(x)[[2]] <- paste(input$batter, 'v.', input$pitcher, sep = " ")
+    dimnames(x)[[2]] <- paste(input$the_batter, 'v.', input$the_pitcher, sep = " ")
     output$comparisontable = DT::renderDataTable({
       DT::datatable(x, options = list(paging = FALSE, searching = FALSE), rownames = c("Single", "Double", "Triple", "Home Run", "Walk"))
     })
@@ -147,12 +147,13 @@ shinyServer(function(input, output){
       pitcher_team2 <- ifelse(input$half2 == 'Top', input$p.home2, input$visiting)
       league1 <- ifelse((as.character(teams[batter_team1, 3])) == (as.character(teams[pitcher_team1, 3])), (as.character(teams[batter_team1, 3])), 'inter')
       league2 <- ifelse(as.character(teams[batter_team2, 3]) == as.character(teams[pitcher_team2, 3]), as.character(teams[batter_team2, 3]), 'inter')
-      prob1 <- probabilities(batter_team1, pitcher_team1, input$batter, input$pitcher, league1, p_state1, p_count1)
+      print(c(batter_team1, pitcher_team1, input$the_batter, input$the_pitcher, league1, p_state1, p_count1))
+      prob1 <- probabilities(batter_team1, pitcher_team1, input$the_batter, input$the_pitcher, league1, p_state1, p_count1)
       percent1 <- paste(prob, '%', sep = "")
       prob2 <- probabilities(batter_team2, pitcher_team2, input$batter2, input$pitcher2, league2, p_state2, p_count2)
       percent2 <- paste(prob2, '%', sep = "")
       x <- data.table(percent1, percent2)
-      dimnames(x)[[2]] <- c(paste(input$batter, 'v.', input$pitcher, sep = " "), paste(input$batter2, 'v.', input$pitcher2, sep = " "))
+      dimnames(x)[[2]] <- c(paste(input$the_batter, 'v.', input$the_pitcher, sep = " "), paste(input$batter2, 'v.', input$pitcher2, sep = " "))
       output$comparisontable = DT::renderDataTable({
         DT::datatable(x, options = list(paging = FALSE, searching = FALSE), rownames = c("Single", "Double", "Triple", "Home Run", "Walk"))
       })})
