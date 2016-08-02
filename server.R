@@ -4,7 +4,7 @@ library(shiny)
 library(retrosheet)
 library(dplyr)
 source("RE-VA.R")
-library('DT')
+library(DT)
 
 shinyServer(function(input, output){
   a <- observe(if(input$info){
@@ -60,6 +60,8 @@ shinyServer(function(input, output){
       selectizeInput("visiting2", "Visiting Team", choices = sort(dimnames(teams)[[1]]), options = list(placeholder = 'Please select a team', onInitialize = I('function() { this.setValue(""); }'))),
       radioButtons('half2', 'Inning:', c('Top', 'Bottom'), inline = TRUE),
       actionButton("midbutton2", "Submit Game Info",style="color: #lightgrey; background-color: #306EFF; border-color: #2e6da4;"),
+      br(),
+      br(),
       uiOutput("pitcher2"),
       uiOutput("batter2"),
       radioButtons('p_outs2','Outs',c('0','1','2'),inline=TRUE),
@@ -75,9 +77,7 @@ shinyServer(function(input, output){
       radioButtons('p_strikes2','Strikes?',c('0','1','2'),inline=TRUE),
       br(),
       br(),
-      actionButton('finishbutton', 'Get Hit Probabilities', style = "color: #lightgrey; background-color: #306EFF; border-color: #2e6da4;"),
-      br(),
-      br()))})})
+      actionButton('finishbutton', 'Get Hit Probabilities', style = "color: #lightgrey; background-color: #306EFF; border-color: #2e6da4;")))})})
   WP <- observeEvent(input$state_button,{
     if(input$batter_name == '' || input$pitcher_name == ''){
       output$home <- renderInfoBox({infoBox("Error", paste('Not Valid Players'), icon = icon('fa fa-times'), color = 'red', fill = TRUE)})
@@ -98,7 +98,6 @@ shinyServer(function(input, output){
       rdiff <- as.numeric(input$home_score) - as.numeric(input$vis_score)
       if(rdiff > 8){rdiff <- 8}else if(rdiff < -8){rdiff <- -8}
       home_win_prob <- pitcher_batter_WP(wpstates, half_inning, state, count, rdiff, input$home_team, input$visiting_team, input$pitcher_name, input$batter_name, pitcher_team, batter_team, count_state, records, teams, league)
-      print(home_win_prob)
       if(home_win_prob == 'Impossible'){
         output$home <- renderInfoBox({infoBox("Home - Win Prob", paste('Impossible'), icon = icon('fa fa-times'), color = 'red', fill = TRUE)})
         output$away <- renderInfoBox({infoBox("Away - Win Prob", paste('Impossible'), icon = icon('fa fa-times'), color = 'red', fill = TRUE)})
@@ -148,6 +147,8 @@ shinyServer(function(input, output){
       prob2 <- probabilities(batter_team2, pitcher_team2, input$batter2, input$pitcher2, league2, p_state2, p_count2)
       percent2 <- paste(prob2, '%', sep = "")
       x <- data.table(percent1, percent2)
+      output$prob1 <- renderText(prob1)
+      output$prob2 <- renderText(prob2)
       dimnames(x)[[2]] <- c(paste(input$the_batter, 'v.', input$the_pitcher, sep = " "), paste(input$batter2, 'v.', input$pitcher2, sep = " "))
       output$comparisontable = DT::renderDataTable({
         DT::datatable(x, options = list(paging = FALSE, searching = FALSE), rownames = c("Single", "Double", "Triple", "Home Run", "Walk"))

@@ -100,6 +100,8 @@ body <- dashboardBody(
                     uiOutput("player2"),
                     tags$head(tags$style("#player2{color: black;font-size: 15px;font-style: bold;text-align: center;}")),
                     uiOutput("compare"),
+                    textOutput("prob1"),
+                    textOutput("prob2"),
                     dataTableOutput('comparisontable'))))
               
 dashboardPage(
