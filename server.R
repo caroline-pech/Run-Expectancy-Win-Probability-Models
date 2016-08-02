@@ -122,7 +122,7 @@ shinyServer(function(input, output){
     batter_team <- ifelse(input$half == 'Top', input$visiting, input$p.home)
     pitcher_team <- ifelse(input$half == 'Top', input$p.home, input$visiting)
     league <- ifelse((as.character(teams[batter_team, 3])) == (as.character(teams[pitcher_team, 3])), (as.character(teams[batter_team, 3])), 'inter')
-    prob <- probabilities(batter_team, pitcher_team, input$batter, input$pitcher, league, p_state, p_count)      
+    prob <- probabilities(batter_team, pitcher_team, input$the_batter, input$the_pitcher, league, p_state, p_count)      
     percent <- paste(prob, '%', sep = "")
     x <- data.table(percent)
     dimnames(x)[[2]] <- paste(input$the_batter, 'v.', input$the_pitcher, sep = " ")
@@ -131,10 +131,6 @@ shinyServer(function(input, output){
     })
   })
   probabilities2 <- observeEvent((input$finishbutton),{
-    # input$nm
-    # if(input$nmbatter == ''|input$nmpitcher == ''){
-    #   output$percents <- renderInfoBox({infoBox("Error", paste('Not Valid Players'), icon = icon('fa fa-times'), color = 'red', fill = TRUE)})
-    # }else{
       bases1 <- paste(ifelse(input$p_first == 'Yes', 1, 0), ifelse(input$p_second == 'Yes', 1, 0), ifelse(input$p_third == 'Yes', 1, 0), sep = "")
       bases2 <- paste(ifelse(input$p_first2 == 'Yes', 1, 0), ifelse(input$p_second2 == 'Yes', 1, 0), ifelse(input$p_third2 == 'Yes', 1, 0), sep = "")
       p_state1 <- paste(bases1, input$p_outs)
@@ -147,7 +143,6 @@ shinyServer(function(input, output){
       pitcher_team2 <- ifelse(input$half2 == 'Top', input$p.home2, input$visiting)
       league1 <- ifelse((as.character(teams[batter_team1, 3])) == (as.character(teams[pitcher_team1, 3])), (as.character(teams[batter_team1, 3])), 'inter')
       league2 <- ifelse(as.character(teams[batter_team2, 3]) == as.character(teams[pitcher_team2, 3]), as.character(teams[batter_team2, 3]), 'inter')
-      print(c(batter_team1, pitcher_team1, input$the_batter, input$the_pitcher, league1, p_state1, p_count1))
       prob1 <- probabilities(batter_team1, pitcher_team1, input$the_batter, input$the_pitcher, league1, p_state1, p_count1)
       percent1 <- paste(prob1, '%', sep = "")
       prob2 <- probabilities(batter_team2, pitcher_team2, input$batter2, input$pitcher2, league2, p_state2, p_count2)
