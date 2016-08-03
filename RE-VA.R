@@ -607,16 +607,22 @@ standings <- function(home_team, visiting_team, team_info, records, wpstate, hal
   }
   return(round(wp_team_park,3))
 }
+# find the probabilities of a single, double, triple, hr, and walk from probabilities.py file
 probabilities <- function(batter_team, pitcher_team, batter, pitcher, league, state, count){
   suppressWarnings(python.load("probabilities.py"))
   percents <- python.call("get_probabilities", as.character(batter_team), as.character(pitcher_team), as.character(batter), as.character(pitcher), as.character(league), as.character(state), as.character(count))
   return(percents)
 }
+# function to find the difference between two rows of data table from hit probabilities tab
 deltas <- function(prob1, prob2, the_batter, the_pitcher, batter2, pitcher2){
+  # create a data table from lists of probabilities for two different matchups
   x <- data.frame(prob1, prob2)
   dimnames(x)[[2]] <- c('a', 'b')
+  # calculate the difference between the columns
   x$diff <- round(x$a - x$b,4)
+  # find the matchup that has a higher probability
   x$winner <- ifelse(x$diff > 0, paste(the_batter, 'v.', the_pitcher, sep = " "), paste(batter2, 'v.', pitcher2, sep = " "))
+  # have a column with the percent difference between the matchups
   x$c <- paste('+', abs(x$diff), '%', sep = "")
   x$diff <- NULL
   x$a <- paste(x$a, '%', sep = "")

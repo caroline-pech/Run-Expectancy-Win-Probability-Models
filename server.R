@@ -113,21 +113,6 @@ shinyServer(function(input, output){
       }
     }
   })
-  probabilities1 <- observeEvent((input$one_player_comparison),{
-    bases <- paste(ifelse(input$p_first == 'Yes', 1, 0), ifelse(input$p_second == 'Yes', 1, 0), ifelse(input$p_third == 'Yes', 1, 0), sep = "")
-    p_state <- paste(bases, input$p_outs)
-    p_count <- paste('c', input$p_balls, input$p_strikes, sep = "")
-    batter_team <- ifelse(input$half == 'Top', input$visiting, input$p.home)
-    pitcher_team <- ifelse(input$half == 'Top', input$p.home, input$visiting)
-    league <- ifelse((as.character(teams[batter_team, 3])) == (as.character(teams[pitcher_team, 3])), (as.character(teams[batter_team, 3])), 'inter')
-    prob <- probabilities(batter_team, pitcher_team, input$the_batter, input$the_pitcher, league, p_state, p_count)      
-    percent <- paste(prob, '%', sep = "")
-    x <- data.table(percent)
-    dimnames(x)[[2]] <- paste(input$the_batter, 'v.', input$the_pitcher, sep = " ")
-    output$comparisontable = DT::renderDataTable({
-      DT::datatable(x, options = list(paging = FALSE, searching = FALSE), rownames = c("Single", "Double", "Triple", "Home Run", "Walk", "Out"))
-    })
-  })
   probabilities2 <- observeEvent((input$finishbutton),{
       bases1 <- paste(ifelse(input$p_first == 'Yes', 1, 0), ifelse(input$p_second == 'Yes', 1, 0), ifelse(input$p_third == 'Yes', 1, 0), sep = "")
       bases2 <- paste(ifelse(input$p_first2 == 'Yes', 1, 0), ifelse(input$p_second2 == 'Yes', 1, 0), ifelse(input$p_third2 == 'Yes', 1, 0), sep = "")
