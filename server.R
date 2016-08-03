@@ -5,6 +5,7 @@ library(retrosheet)
 library(dplyr)
 source("RE-VA.R")
 library(DT)
+library(shinyjs)
 
 shinyServer(function(input, output){
   a <- observe(if(input$info){
@@ -27,9 +28,7 @@ shinyServer(function(input, output){
       selectizeInput("batter_name","Batter's Name:", available_batters, options = list(placeholder = 'Please select a batter', onInitialize = I('function() { this.setValue(""); }')))})})
  c <- observeEvent(input$batter_name,{
     output$state_button <- renderUI({
-      actionButton("state_button", "Get Win Probability",style="color: #lightgrey; background-color: #306EFF; border-color: #2e6da4")
-    })
-  })
+      actionButton("state_button", "Get Win Probability",style="color: #lightgrey; background-color: #306EFF; border-color: #2e6da4")})})
   d <- observeEvent(input$midbutton,{
     activePitchers <- subset(activePlayers, Position == 'Starter'|Position == 'Reliever'|Position == 'P')
     batter_team <- ifelse(input$half == 'Top', paste(input$visiting), paste(input$p.home))
@@ -51,6 +50,7 @@ shinyServer(function(input, output){
       avail_batters <- (as.character(activePlayers[which(teams[batter_team, 2]==activePlayers$Team),1]))
       selectizeInput("batter2","Batter's Name:", avail_batters, options = list(placeholder = 'Please select a batter', onInitialize = I('function() { this.setValue(""); }')))})})
   compare <- observeEvent(input$compare_button, {
+    shinyjs::hide(input$one_player_comparison)
     output$player1 <- renderText({"Player 1"})
     output$player2 <- renderText({"Player 2"})
     output$compare <- renderUI({
@@ -75,7 +75,6 @@ shinyServer(function(input, output){
       radioButtons('p_balls2','Balls?',c('0','1','2','3'),inline=TRUE),
       br(),
       radioButtons('p_strikes2','Strikes?',c('0','1','2'),inline=TRUE),
-      br(),
       br(),
       actionButton('finishbutton', 'Get Hit Probabilities', style = "color: #lightgrey; background-color: #306EFF; border-color: #2e6da4;")))})})
   WP <- observeEvent(input$state_button,{
@@ -147,8 +146,6 @@ shinyServer(function(input, output){
       prob2 <- probabilities(batter_team2, pitcher_team2, input$batter2, input$pitcher2, league2, p_state2, p_count2)
       percent2 <- paste(prob2, '%', sep = "")
       x <- data.table(percent1, percent2)
-      output$prob1 <- renderText(prob1)
-      output$prob2 <- renderText(prob2)
       dimnames(x)[[2]] <- c(paste(input$the_batter, 'v.', input$the_pitcher, sep = " "), paste(input$batter2, 'v.', input$pitcher2, sep = " "))
       output$comparisontable = DT::renderDataTable({
         DT::datatable(x, options = list(paging = FALSE, searching = FALSE), rownames = c("Single", "Double", "Triple", "Home Run", "Walk"))
