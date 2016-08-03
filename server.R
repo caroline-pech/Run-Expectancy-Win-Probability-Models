@@ -125,7 +125,7 @@ shinyServer(function(input, output){
     x <- data.table(percent)
     dimnames(x)[[2]] <- paste(input$the_batter, 'v.', input$the_pitcher, sep = " ")
     output$comparisontable = DT::renderDataTable({
-      DT::datatable(x, options = list(paging = FALSE, searching = FALSE), rownames = c("Single", "Double", "Triple", "Home Run", "Walk"))
+      DT::datatable(x, options = list(paging = FALSE, searching = FALSE), rownames = c("Single", "Double", "Triple", "Home Run", "Walk", "Out"))
     })
   })
   probabilities2 <- observeEvent((input$finishbutton),{
@@ -148,7 +148,7 @@ shinyServer(function(input, output){
       x <- data.table(percent1, percent2)
       dimnames(x)[[2]] <- c(paste(input$the_batter, 'v.', input$the_pitcher, sep = " "), paste(input$batter2, 'v.', input$pitcher2, sep = " "))
       output$comparisontable = DT::renderDataTable({
-        DT::datatable(x, options = list(paging = FALSE, searching = FALSE), rownames = c("Single", "Double", "Triple", "Home Run", "Walk"))
+        DT::datatable(x, options = list(paging = FALSE, searching = FALSE), rownames = c("Single", "Double", "Triple", "Home Run", "Walk", "Out"))
       })})
   RE <- observe(if(input$state_button2){
     if(input$nameBatter == '' || input$namePitcher == ''){

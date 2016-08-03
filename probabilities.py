@@ -15,9 +15,9 @@ count_state = dict(zip(states, runsexp))
 yahoo_abv = {'Angels':'laa', 'Orioles':'bal', 'Red Sox':'bos', 'White Sox':'chw', 'Indians':'cle', 'Tigers':'det', 'Astros':'hou', 'Royals':'kan', 'Twins':'min', 'Yankees':'nyy', 'Athletics':'oak', 'Mariners':'sea', 'Rays':'tam', 'Rangers':'tex', 'Blue Jays':'tor', 'Diamondbacks':'ari', 'Braves':'atl', 'Cubs':'chc', 'Reds':'cin', 'Rockies':'col', 'Dodgers':'lad', 'Marlins':'mia', 'Brewers':'mil', 'Mets':'nym', 'Phillies':'phi', 'Pirates':'pit', 'Padres':'sdg', 'Giants':'sfo', 'Cardinals':'stl', 'Nationals':'was'}
 batter_abv ={'Angels':'laa', 'Orioles':'bal', 'Red Sox':'bos', 'White Sox':'chw', 'Indians':'cle', 'Tigers':'det', 'Astros':'hou', 'Royals':'kc', 'Twins':'min', 'Yankees':'nyy', 'Athletics':'oak', 'Mariners':'sea', 'Rays':'tb', 'Rangers':'tex', 'Blue Jays':'tor', 'Diamondbacks':'ari', 'Braves':'atl', 'Cubs':'chc', 'Reds':'cin', 'Rockies':'col', 'Dodgers':'la', 'Marlins':'mia', 'Brewers':'mil', 'Mets':'nym', 'Phillies':'phi', 'Pirates':'pit', 'Padres':'sd', 'Giants':'sf', 'Cardinals':'stl', 'Nationals':'was'}
 
-
 AL = ['Angels','Orioles','Red Sox','White Sox','Indians','Tigers','Astros','Royals','Twins','Yankees','Athletics','Mariners','Rays','Rangers','Blue Jays']
 NL = ['Diamondbacks','Braves','Cubs','Reds','Rockies','Dodgers','Marlins','Brewers','Mets','Phillies','Pirates','Padres','Giants','Cardinals','Nationals']
+
 def get_batter_percentages(player, team):
 	url = 'http://espn.go.com/mlb/team/stats/batting/_/name/%s' % (team) 
 	page = urllib2.urlopen(url)
@@ -36,7 +36,21 @@ def get_batter_percentages(player, team):
 		ptriple = float(stat[6])/(float(stat[2])+float(stat[10]))
 		phr = float(stat[7])/(float(stat[2])+float(stat[10]))
 		pWALK = float(stat[10])/(float(stat[2])+float(stat[10]))
-		return(psingle,pdouble,ptriple,phr,pWALK)
+		if psingle == 0 and pdouble == 0 and ptriple == 0 and phr == 0 and pWALK == 0:
+			player = table.find(text = re.compile('Totals')).find_parent("tr")
+			cells = player.findAll('td')
+			stat = [cell.text.strip('\n') for cell in cells]
+			# stat is line of player's stats
+			# calculations below find percents of singles/hits, doubles/hits, etc
+			single = float(stat[4]) - (float(stat[5]) + float(stat[6]) + float(stat[7]))
+			psingle = single/(float(stat[2])+float(stat[10]))
+			pdouble = float(stat[5])/(float(stat[2])+float(stat[10]))
+			ptriple = float(stat[6])/(float(stat[2])+float(stat[10]))
+			phr = float(stat[7])/(float(stat[2])+float(stat[10]))
+			pWALK = float(stat[10])/(float(stat[2])+float(stat[10]))
+			return(psingle,pdouble,ptriple,phr,pWALK)
+		else:
+			return(psingle,pdouble,ptriple,phr,pWALK)
 	except:
 		player = table.find(text = re.compile('Totals')).find_parent("tr")
 		cells = player.findAll('td')
@@ -50,6 +64,7 @@ def get_batter_percentages(player, team):
 		phr = float(stat[7])/(float(stat[2])+float(stat[10]))
 		pWALK = float(stat[10])/(float(stat[2])+float(stat[10]))
 		return(psingle,pdouble,ptriple,phr,pWALK)
+
 def get_count_probability(state, count, probability):
 	index = count_state[''].index(count)
 	runs = count_state[state][index]
@@ -61,6 +76,7 @@ def get_count_probability(state, count, probability):
 		x = (1+abs(delta/10)) * probability
 		dif = x - probability
 		return(probability - dif)
+
 def get_pitcher_percentages(team, pitcher):
 	url = 'http://espn.go.com/mlb/team/stats/pitching/_/name/%s' % (team) 
 	page = urllib2.urlopen(url)
@@ -79,6 +95,7 @@ def get_pitcher_percentages(team, pitcher):
 	P1 = (float(stat[9])/BF) - P4 - P3 - P2
 	PBB = float(stat[12])/BF
 	return(P1,P2,P3,P4,PBB)
+
 def get_league_BB(league):
 	url = 'http://espn.go.com/mlb/stats/team/_/stat/batting/split/31/type/expanded'
 	page = urllib2.urlopen(url)
@@ -127,15 +144,9 @@ def get_probabilities(batter_team, pitcher_team, batter, pitcher, league, state,
 	ptriple = log5(BP[2], PP[2], LA[2])
 	phr = log5(BP[3], PP[3], LA[3])
 	pbb = log5(BP[4], PP[4], LA[4])
-	# print(psingle, pdouble, ptriple, phr, pbb)
-	# print(BP)
-	# print(PP)
-	# print(LA)
 	pcSINGLE = get_count_probability(state, count, psingle) * 100
 	pcDOUBLE = get_count_probability(state, count, pdouble) * 100 
 	pcTRIPLE = get_count_probability(state, count, ptriple) * 100
 	pcHR = get_count_probability(state, count, phr) * 100
 	pcWALK = get_count_probability(state, count, pbb)* 100
-	return(round(pcSINGLE,4), round(pcDOUBLE,4), round(pcTRIPLE,4), round(pcHR,4), round(pcWALK,4))
-# print(get_probabilities('Red Sox', 'Orioles', 'David Ortiz', 'Chris Tillman', 'AL', '000 0', 'c00'))
-# print(get_probabilities('Astros', 'Angels', 'Jose Altuve', 'Al Alburquerque', 'AL', '000 0', 'c00'))
+	return(round(pcSINGLE,4), round(pcDOUBLE,4), round(pcTRIPLE,4), round(pcHR,4), round(pcWALK,4), round(100 - (pcSINGLE + pcDOUBLE + pcTRIPLE + pcHR + pcWALK), 4))
