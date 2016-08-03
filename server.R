@@ -76,7 +76,7 @@ shinyServer(function(input, output){
       br(),
       radioButtons('p_strikes2','Strikes?',c('0','1','2'),inline=TRUE),
       br(),
-      actionButton('finishbutton', 'Get Hit Probabilities', style = "color: #lightgrey; background-color: #306EFF; border-color: #2e6da4;")))})})
+      actionButton('finishbutton', 'Get Comparison Probabilities', style = "color: #lightgrey; background-color: #306EFF; border-color: #2e6da4;")))})})
   WP <- observeEvent(input$state_button,{
     if(input$batter_name == '' || input$pitcher_name == ''){
       output$home <- renderInfoBox({infoBox("Error", paste('Not Valid Players'), icon = icon('fa fa-times'), color = 'red', fill = TRUE)})
