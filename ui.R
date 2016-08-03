@@ -94,14 +94,12 @@ body <- dashboardBody(
                           br(),
                           radioButtons('p_strikes','Strikes?',c('0','1','2'),inline=TRUE),
                           br(),
-                          # uiOutput("one_player_comparison"),
-                          # div(style="display:inline-block; float:right",actionButton("one_player_comparison", "Get Hit Probabilities", style="color: #lightgrey; background-color: #306EFF; border-color: #2e6da4; float:right")),
                           div(style="display:inline-block; float:left",actionButton('compare_button', "Make a Comparison", style="color: #lightgrey; background-color: #4AA02C; border-color: #2e6da4; float:right")),
                           br())),
                     uiOutput("player2"),
                     tags$head(tags$style("#player2{color: black;font-size: 15px;font-style: bold;text-align: center;}")),
                     uiOutput("compare"),
-                    dataTableOutput('comparisontable'),
+                    DT::dataTableOutput("comparisontable"),
                     tags$head(tags$style('#comparisontable{.input-active:hover{background-color: yellow};')))))
               
 dashboardPage(
