@@ -187,6 +187,12 @@ get_run_expectancy <- function(home_team, batter_team, batter_name, pitcher_name
   p_splits_R <- subset(pitcher_info, pitcher_info$retro_id == pitcher_retrosheet_id)$Right
   p_splits_L <-subset(pitcher_info, pitcher_info$retro_id == pitcher_retrosheet_id)$Left
   avg <- subset(pitcher_info, pitcher_info$retro_id == pitcher_retrosheet_id)$Average
+  a <- character(0)
+  if(identical(a,pitcher_retrosheet_id)){
+    p_splits_R <- mean(pitcher_info$Right[pitcher_info$Right != 0])
+    p_splits_L <- mean(pitcher_info$Left[pitcher_info$Left != 0])
+    avg <- as.numeric(summary(pitcher_info$Average)[4])
+  }
   # for players with names like "C.J.", need to remove periods to run with stattleship
   name <-  gsub("\\."," ", batter_name)
   name <- gsub("  ", " ", name)
@@ -215,11 +221,16 @@ get_run_expectancy <- function(home_team, batter_team, batter_name, pitcher_name
 # main function gets the run expectancy given specific factors
 main_function <- function(state, count, batter, stats, env = Run_Env, condition = count_state){
   # calculate the run environment difference to correct the count_state csv values
-  avg_run_env <- (sum(env[,1])/(nrow(env)))
-  yr_run_env <- env[as.character(year),1]
+  avg_run_env <- (sum(env[,2])/(nrow(env)))
+  print(avg_run_env)
+  yr_run_env <- as.numeric(subset(env, env$X == as.character(year))$Run.Environment)
+  print(yr_run_env)
   dif <- ((yr_run_env-avg_run_env)/avg_run_env)
+  print(dif)
   cs <- condition[state,count]
+  print(cs)
   RE_with_Run_Env <- ((cs)*(dif) + (cs))
+  print(RE_with_Run_Env)
   # if stats is of type "double", the average values were used, so entire stat line is not returned
   if(typeof(stats) == "double"){
     RE <- round(stats + RE_with_Run_Env, 2)
@@ -236,6 +247,7 @@ fun1 <- function(home_team,batter_team,pitcher_team,pitcher_name,state,count,bat
     return('Not a Valid Matchup')
   }else{
     stats <- get_run_expectancy(home_team,batter_team,batter_name, pitcher_name,pitcher_team, year, pitcher_info, guts_table, teams)
+    print(stats)
     RE <- main_function(state,count,batter_name, stats)
     return(RE)
   }
