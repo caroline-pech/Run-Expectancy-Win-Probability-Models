@@ -142,11 +142,9 @@ shinyServer(function(input, output){
       league1 <- ifelse((as.character(teams[batter_team1, 3])) == (as.character(teams[pitcher_team1, 3])), (as.character(teams[batter_team1, 3])), 'inter')
       league2 <- ifelse(as.character(teams[batter_team2, 3]) == as.character(teams[pitcher_team2, 3]), as.character(teams[batter_team2, 3]), 'inter')
       prob1 <- probabilities(batter_team1, pitcher_team1, input$the_batter, input$the_pitcher, league1, p_state1, p_count1)
-      percent1 <- paste(prob1, '%', sep = "")
       prob2 <- probabilities(batter_team2, pitcher_team2, input$batter2, input$pitcher2, league2, p_state2, p_count2)
-      percent2 <- paste(prob2, '%', sep = "")
-      x <- data.table(percent1, percent2)
-      dimnames(x)[[2]] <- c(paste(input$the_batter, 'v.', input$the_pitcher, sep = " "), paste(input$batter2, 'v.', input$pitcher2, sep = " "))
+      x <- deltas(prob1, prob2, input$the_batter, input$the_pitcher, input$batter2, input$pitcher2)
+      dimnames(x)[[2]] <- c(paste(input$the_batter, 'v.', input$the_pitcher, sep = " "), paste(input$batter2, 'v.', input$pitcher2, sep = " "), "Higher Probability Matchup", "Difference")
       output$comparisontable = DT::renderDataTable({
         DT::datatable(x, options = list(paging = FALSE, searching = FALSE), rownames = c("Single", "Double", "Triple", "Home Run", "Walk", "Out"))
       })})

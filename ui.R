@@ -101,7 +101,6 @@ body <- dashboardBody(
                     uiOutput("compare"),
                     DT::dataTableOutput("comparisontable"),
                     tags$head(tags$style('#comparisontable{.input-active:hover{background-color: yellow};')))))
-              
 dashboardPage(
   dashboardHeader(title = span(tagList(icon("fa fa-shield"), "numberFire RE & WP")), titleWidth = 250),
   sidebar,

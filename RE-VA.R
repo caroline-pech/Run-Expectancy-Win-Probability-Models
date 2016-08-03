@@ -612,3 +612,14 @@ probabilities <- function(batter_team, pitcher_team, batter, pitcher, league, st
   percents <- python.call("get_probabilities", as.character(batter_team), as.character(pitcher_team), as.character(batter), as.character(pitcher), as.character(league), as.character(state), as.character(count))
   return(percents)
 }
+deltas <- function(prob1, prob2, the_batter, the_pitcher, batter2, pitcher2){
+  x <- data.frame(prob1, prob2)
+  dimnames(x)[[2]] <- c('a', 'b')
+  x$diff <- round(x$a - x$b,4)
+  x$winner <- ifelse(x$diff > 0, paste(the_batter, 'v.', the_pitcher, sep = " "), paste(batter2, 'v.', pitcher2, sep = " "))
+  x$c <- paste('+', abs(x$diff), '%', sep = "")
+  x$diff <- NULL
+  x$a <- paste(x$a, '%', sep = "")
+  x$b <- paste(x$b, '%', sep = "")
+  return(x)
+}
