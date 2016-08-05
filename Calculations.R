@@ -1,14 +1,15 @@
+setwd("~/Desktop/run-expectancy")
+
 library(dplyr)
 library(retrosheet) 
 library(rvest)
 library(stringr)
 library(rPython)
-library("devtools")
+library(devtools)
 library(stattleshipR)
-setwd("~/Desktop/run-expectancy")
 # update year at start of each season
 year <- '2016' 
-# these are all necessary csvs -- see readMe file for descriptions of each 
+# these are all necessary csvs -- see document outline file for descriptions of each
 teams <- read.csv("teams2016.csv", header = TRUE)
 dimnames(teams)[[1]] <- teams$X
 # remove counting column
@@ -42,9 +43,8 @@ activePlayers <- read.csv("activePlayers.csv", header=TRUE)
 activePlayers$X <- NULL
 pitcher_info <- read.csv("pitcher.info.csv", header=TRUE)
 pitcher_info$X <- NULL
-library("devtools")
+# stattleship
 devtools::install_github("stattleship/stattleship-r")
-library(stattleshipR)
 set_token("bf3c65fd3952ea434f4a96b641744475")
 
 ### Run Expectancy ###
@@ -187,6 +187,7 @@ get_run_expectancy <- function(home_team, batter_team, batter_name, pitcher_name
   p_splits_R <- subset(pitcher_info, pitcher_info$retro_id == pitcher_retrosheet_id)$Right
   p_splits_L <-subset(pitcher_info, pitcher_info$retro_id == pitcher_retrosheet_id)$Left
   avg <- subset(pitcher_info, pitcher_info$retro_id == pitcher_retrosheet_id)$Average
+  # if a real number is not returned, return the means from each column
   a <- character(0)
   if(identical(a,pitcher_retrosheet_id)){
     p_splits_R <- mean(pitcher_info$Right[pitcher_info$Right != 0])
@@ -222,15 +223,10 @@ get_run_expectancy <- function(home_team, batter_team, batter_name, pitcher_name
 main_function <- function(state, count, batter, stats, env = Run_Env, condition = count_state){
   # calculate the run environment difference to correct the count_state csv values
   avg_run_env <- (sum(env[,2])/(nrow(env)))
-  print(avg_run_env)
   yr_run_env <- as.numeric(subset(env, env$X == as.character(year))$Run.Environment)
-  print(yr_run_env)
   dif <- ((yr_run_env-avg_run_env)/avg_run_env)
-  print(dif)
   cs <- condition[state,count]
-  print(cs)
   RE_with_Run_Env <- ((cs)*(dif) + (cs))
-  print(RE_with_Run_Env)
   # if stats is of type "double", the average values were used, so entire stat line is not returned
   if(typeof(stats) == "double"){
     RE <- round(stats + RE_with_Run_Env, 2)
@@ -247,7 +243,6 @@ fun1 <- function(home_team,batter_team,pitcher_team,pitcher_name,state,count,bat
     return('Not a Valid Matchup')
   }else{
     stats <- get_run_expectancy(home_team,batter_team,batter_name, pitcher_name,pitcher_team, year, pitcher_info, guts_table, teams)
-    print(stats)
     RE <- main_function(state,count,batter_name, stats)
     return(RE)
   }
@@ -609,6 +604,7 @@ standings <- function(home_team, visiting_team, team_info, records, wpstate, hal
   }else if(wpstate < 0.1){
     wp_with_team_standing <- max(wp_with_team_standing, 0.01)
   }
+  # incorporate batting park factors from teams table (script to run is BPF - script.R)
   bpf <- as.numeric(team_info[home_team, 9])
   if(bpf > 1){
     pf <- wp_with_team_standing * bpf

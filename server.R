@@ -3,11 +3,12 @@ setwd("~/Desktop/run-expectancy")
 library(shiny)
 library(retrosheet)
 library(dplyr)
-source("RE-VA.R")
+source("Calculations.R")
 library(DT)
 library(shinyjs)
 
 shinyServer(function(input, output){
+    # if game info button has been pushed, use selected teams to return proper batter and pitcher options
   a <- observe(if(input$info){
       activePitchers <- subset(activePlayers, Position == 'Starter'|Position == 'Reliever'|Position == 'P')
       output$namePitcher <- renderUI({
@@ -16,6 +17,7 @@ shinyServer(function(input, output){
       output$nameBatter <- renderUI({
         batters <- (as.character(activePlayers[which(teams[input$batter, 2]==activePlayers$Team),1]))
         selectizeInput("nameBatter","Batter's Name:", batters, options = list(placeholder = 'Please select a batter', onInitialize = I('function() { this.setValue(""); }')))})})
+  # same as above on different tab
  b <- observeEvent(input$info_button, {
     activePitchers <- subset(activePlayers, Position == 'Starter'|Position == 'Reliever'|Position == 'P')
     batter_team <- ifelse(input$half_inning == 'Top', paste(input$visiting_team), paste(input$home_team))
@@ -26,9 +28,11 @@ shinyServer(function(input, output){
     output$batter_name <- renderUI({
       available_batters <- (as.character(activePlayers[which(teams[batter_team, 2]==activePlayers$Team),1]))
       selectizeInput("batter_name","Batter's Name:", available_batters, options = list(placeholder = 'Please select a batter', onInitialize = I('function() { this.setValue(""); }')))})})
+  # if batter's name has been filled, get win probability button shows up
  c <- observeEvent(input$batter_name,{
     output$state_button <- renderUI({
       actionButton("state_button", "Get Win Probability",style="color: #lightgrey; background-color: #306EFF; border-color: #2e6da4")})})
+  # if game info button pushed, display list of batters and pitchers to choose from relative to team inputs (1st comparison player)
   d <- observeEvent(input$midbutton,{
     activePitchers <- subset(activePlayers, Position == 'Starter'|Position == 'Reliever'|Position == 'P')
     batter_team <- ifelse(input$half == 'Top', paste(input$visiting), paste(input$p.home))
@@ -39,6 +43,7 @@ shinyServer(function(input, output){
     output$the_batter <- renderUI({
       avail_batters <- (as.character(activePlayers[which(teams[batter_team, 2]==activePlayers$Team),1]))
       selectizeInput("the_batter","Batter's Name:", avail_batters, options = list(placeholder = 'Please select a batter', onInitialize = I('function() { this.setValue(""); }')))})})
+  # if game info button pushed, display list of batters and pitchers to choose from relative to team inputs (2nd comparison player)
   e <- observeEvent(input$midbutton2,{
     activePitchers <- subset(activePlayers, Position == 'Starter'|Position == 'Reliever'|Position == 'P')
     batter_team <- ifelse(input$half2 == 'Top', paste(input$visiting2), paste(input$p.home2))
@@ -49,14 +54,13 @@ shinyServer(function(input, output){
     output$batter2 <- renderUI({
       avail_batters <- (as.character(activePlayers[which(teams[batter_team, 2]==activePlayers$Team),1]))
       selectizeInput("batter2","Batter's Name:", avail_batters, options = list(placeholder = 'Please select a batter', onInitialize = I('function() { this.setValue(""); }')))})})
+  # if comparison button has been pushed, have identical column of player info on right hand side of page
   compare <- observeEvent(input$compare_button, {
     shinyjs::hide(input$one_player_comparison)
-    output$player1 <- renderText({"Player 1"})
-    output$player2 <- renderText({"Player 2"})
     output$compare <- renderUI({
       column(width = 6, 
              fluidRow(style = "padding-left:25px;",
-                h4("Player 1", style = "color: black; font-style: bold; align:center;"),
+                h4("Player 2", style = "color: black; font-style: bold; align:center;"),
                 selectizeInput("p.home2","Home Team:", choices = sort(dimnames(teams)[[1]]), options = list(placeholder = 'Please select a team', onInitialize = I('function() { this.setValue(""); }'))),
                 tags$head(tags$style(HTML(".selectize-input.input-active, .selectize-input.input-active:hover, .selectize-control.multi .selectize-input.focus {border-color: navy !important;}.selectize-dropdown .active {background: #ADC4EC !important;}"))),
                 selectizeInput("visiting2", "Visiting Team", choices = sort(dimnames(teams)[[1]]), options = list(placeholder = 'Please select a team', onInitialize = I('function() { this.setValue(""); }'))),
@@ -79,6 +83,7 @@ shinyServer(function(input, output){
                 radioButtons('p_strikes2','Strikes?',c('0','1','2'),inline=TRUE),
                 br(),
                 actionButton('finishbutton', 'Get Comparison Probabilities', style = "color: #lightgrey; background-color: #306EFF; border-color: #2e6da4;")))})})
+  # if all the info has been submitted, run the win probability function from Calculations.R
   WP <- observeEvent(input$state_button,{
     if(input$batter_name == '' || input$pitcher_name == ''){
       output$home <- renderInfoBox({infoBox("Error", paste('Not Valid Players'), icon = icon('fa fa-times'), color = 'red', fill = TRUE)})
@@ -115,6 +120,7 @@ shinyServer(function(input, output){
       }
     }
   })
+  # if the comparison player information has been submitted, run the probabilities function from Calculations.R
   probabilities2 <- observeEvent((input$finishbutton),{
       bases1 <- paste(ifelse(input$p_first == 'Yes', 1, 0), ifelse(input$p_second == 'Yes', 1, 0), ifelse(input$p_third == 'Yes', 1, 0), sep = "")
       bases2 <- paste(ifelse(input$p_first2 == 'Yes', 1, 0), ifelse(input$p_second2 == 'Yes', 1, 0), ifelse(input$p_third2 == 'Yes', 1, 0), sep = "")
@@ -135,6 +141,7 @@ shinyServer(function(input, output){
       output$comparisontable = DT::renderDataTable({
         DT::datatable(x, options = list(paging = FALSE, searching = FALSE), rownames = c("Single", "Double", "Triple", "Home Run", "Walk", "Out"))
       })})
+  # if all the run expectancy info has been submitted, run fun1 from Calculations.R for return value
   RE <- observe(if(input$state_button2){
     if(input$nameBatter == '' || input$namePitcher == ''){
       output$runs <- renderInfoBox({infoBox("Error", paste('Not Valid Players'), icon = icon('fa fa-times'), color='red', fill = TRUE)})

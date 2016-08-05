@@ -2,8 +2,6 @@ import csv
 from bs4 import BeautifulSoup
 import urllib2
 import re
-
-
 # script to scrape current run environment from current mlb year 
 def get_run_environment():
 	url = 'http://espn.go.com/mlb/stats/team/_/stat/batting'

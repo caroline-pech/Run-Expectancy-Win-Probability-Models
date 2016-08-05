@@ -1,12 +1,15 @@
+library(shinydashboard)
+# read the teams file for initial dropdown of all MLB teams
 teams <- read.csv("teams2016.csv", header = TRUE)
 dimnames(teams)[[1]] <- teams$X
 teams$X <- NULL
-library(shinydashboard)
+# left sidebar shows the three tabs
 sidebar <- dashboardSidebar(width = 250, sidebarMenu(
                             menuItem("Win Probability - Matchups", tabName = 'wpSpecific', icon = icon('fa fa-angle-right')),
                             menuItem("Run Expectancy", tabName = "re", icon = icon("fa fa-angle-right")),
                             menuItem("Hit Probabilities - Comparison", tabName = "probs", icon = icon("fa fa-angle-right"))))
-body <- dashboardBody(  
+# body of site seperated by tab name
+body <- dashboardBody(
           tabItems(
               tabItem(tabName = "re", style="height:1000px", fluidRow(
                       column(width = 8, 
@@ -75,8 +78,6 @@ body <- dashboardBody(
                     column(width = 6, 
                            fluidRow(style = "padding-left:25px;padding-bottom:50px",
                               h4("Player 1", style = "color: black; font-style: bold; align:center;"),
-                              # uiOutput("player1"),
-                              # tags$head(tags$style("#player1{color: black;font-size: 15px;font-style: bold;text-align: center;}")),
                               selectizeInput("p.home","Home Team:", choices = sort(dimnames(teams)[[1]]), options = list(placeholder = 'Please select a team', onInitialize = I('function() { this.setValue(""); }'))),
                                 tags$head(tags$style(HTML(".selectize-input.input-active, .selectize-input.input-active:hover, .selectize-control.multi .selectize-input.focus {border-color: navy !important;}.selectize-dropdown .active {background: #ADC4EC !important;}"))),
                               selectizeInput("visiting", "Visiting Team", choices = sort(dimnames(teams)[[1]]), options = list(placeholder = 'Please select a team', onInitialize = I('function() { this.setValue(""); }'))),
@@ -105,6 +106,7 @@ body <- dashboardBody(
                     uiOutput("compare"),
                     DT::dataTableOutput("comparisontable"),
                     tags$head(tags$style('#comparisontable{.input-active:hover{background-color: yellow};')))))
+# puts all the elements above into page 
 dashboardPage(
   dashboardHeader(title = span(img(src = "numberFirelogo.png", height = 52, width = 130)), titleWidth = 250),
   sidebar,
